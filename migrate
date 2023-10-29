@@ -1,0 +1,5 @@
+#! /bin/sh
+
+set -xe
+
+goose -dir migrations -s postgres "host=db user=postgres password=postgres dbname=postgres sslmode=disable" $@

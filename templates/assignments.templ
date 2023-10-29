@@ -1,0 +1,10 @@
+package templates
+
+import "github.com/Kavantix/go-form/database"
+import "github.com/Kavantix/go-form/resources"
+
+templ AssignmentOverview(assignments []database.AssignmentRow) {
+	@Layout() {
+		@Table(resources.AssignmentResource{}, assignments)
+	}
+}

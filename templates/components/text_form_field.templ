@@ -1,0 +1,44 @@
+package components
+
+type TextFormFieldConfig[T any] struct {
+	Label       string
+	FieldName   string
+	Placeholder string
+	Type        string
+	Required    bool
+	Value       func(row *T) string
+}
+
+func (f *TextFormFieldConfig[T]) RenderFormField(value *T, validationError string) templ.Component {
+	return TextFormField[T](f, value, validationError)
+}
+func (f *TextFormFieldConfig[T]) Name() string {
+	return f.FieldName
+}
+
+templ TextFormField[T any](config (*TextFormFieldConfig[T]), value *T, validationError string) {
+	<label>
+		{ config.Label }
+		<input
+ 			required?={ config.Required }
+ 			if config.Type == "" {
+				type="text"
+			} else {
+				type={ config.Type }
+			}
+ 			if value != nil {
+				value={ config.Value(value) }
+			}
+ 			name={ config.FieldName }
+ 			if validationError != "" {
+				class="block mb-2 w-full p-4 bg-red-50 border border-red-500 text-red-900 placeholder-red-700 text-sm rounded-lg focus:ring-red-500"
+			} else {
+				class="block mb-2 w-full p-4 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 sm:text-md focus:ring-blue-500 focus:border-blue-500"
+			}
+ 			placeholder={ config.Placeholder }
+		/>
+		if validationError != "" {
+			<p class="mt-2 text-sm text-red-600 dark:text-red-500">{ validationError }</p>
+		}
+	</label>
+}

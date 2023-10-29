@@ -1,0 +1,27 @@
+package templates
+
+import "github.com/Kavantix/go-form/database"
+import "github.com/Kavantix/go-form/resources"
+import "github.com/Kavantix/go-form/templates/components"
+
+templ UsersOverview(users []database.UserRow) {
+	@Layout() {
+		@Table(resources.UserResource{}, users)
+		@components.Button("/users/create") {
+			Add user 
+		}
+	}
+}
+
+templ UsersCreate(user *database.UserRow, validationErrors map[string]string) {
+	@Layout() {
+		<h1>Create new user</h1>
+		@components.Form(resources.UserResource{}, user, validationErrors)
+	}
+}
+
+templ UsersView(user *database.UserRow) {
+	@Layout() {
+		@components.Form(resources.UserResource{}, user, nil)
+	}
+}

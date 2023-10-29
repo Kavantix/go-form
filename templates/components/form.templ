@@ -1,0 +1,22 @@
+package components
+
+import . "github.com/Kavantix/go-form/interfaces"
+
+type Resource[T any] interface {
+	FormConfig() FormConfig[T]
+}
+
+templ Form[T any](resource (Resource[T]), value *T, validationErrors map[string]string) {
+	@form(resource.FormConfig(), value, validationErrors)
+}
+
+templ form[T any](config (FormConfig[T]), value *T, validationErrors map[string]string) {
+	<form class="mb-6 p-4" action={ templ.URL(config.SaveUrl(value)) } method="POST">
+		for _, field := range config.Fields {
+			@field.RenderFormField(value, validationErrors[field.Name()])
+		}
+		@Button("") {
+			Save
+		}
+	</form>
+}
