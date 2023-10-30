@@ -1,6 +1,7 @@
 package database
 
 import (
+	"errors"
 	"fmt"
 	"log"
 
@@ -8,6 +9,9 @@ import (
 )
 
 var (
+	ErrNotFound       = errors.New("entry not found")
+	ErrDuplicateEmail = errors.New("email already exists")
+
 	db *sqlx.DB
 )
 
@@ -22,7 +26,7 @@ func Connect(host, username, password, database string) error {
 	if err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}
-	db.SetMaxOpenConns(100)
+	db.SetMaxOpenConns(10)
 	return nil
 }
 

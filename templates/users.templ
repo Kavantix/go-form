@@ -5,7 +5,7 @@ import "github.com/Kavantix/go-form/resources"
 import "github.com/Kavantix/go-form/templates/components"
 
 templ UsersOverview(users []database.UserRow) {
-	@Layout() {
+	@Layout("users") {
 		@Table(resources.UserResource{}, users)
 		@components.Button("/users/create") {
 			Add user 
@@ -14,14 +14,14 @@ templ UsersOverview(users []database.UserRow) {
 }
 
 templ UsersCreate(user *database.UserRow, validationErrors map[string]string) {
-	@Layout() {
+	@Layout("users") {
 		<h1>Create new user</h1>
 		@components.Form(resources.UserResource{}, user, validationErrors)
 	}
 }
 
 templ UsersView(user *database.UserRow) {
-	@Layout() {
+	@Layout("users") {
 		@components.Form(resources.UserResource{}, user, nil)
 	}
 }

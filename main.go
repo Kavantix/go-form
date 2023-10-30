@@ -35,7 +35,11 @@ func main() {
 	}
 	{
 		r := r.Group("/assignments")
+		r.GET("/:id", HandleAssignmentsView)
 		r.GET("", HandleAssignmentsIndex)
+		r.POST("", HandleCreateAssignment)
+		r.GET("/create", HandleAssignmentsCreate)
+		r.POST("/:id", HandleUpdateAssignment)
 	}
 
 	r.Run("0.0.0.0:80") // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")

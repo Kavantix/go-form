@@ -108,13 +108,7 @@ func HandleCreateUser(c *gin.Context) {
 		}
 	}
 	fmt.Printf("Created user with id %d\n", userId)
-	user, err := database.GetUser(userId)
-	if err != nil {
-		c.AbortWithError(500, err)
-		return
-	}
-	c.Header("hx-push-url", fmt.Sprintf("/users/%d", userId))
-	template(c, 201, templates.UsersView(user))
+	HandleUsersIndex(c)
 }
 
 func HandleAssignmentsIndex(c *gin.Context) {
@@ -129,4 +123,60 @@ func HandleAssignmentsIndex(c *gin.Context) {
 		return
 	}
 	template(c, 200, templates.AssignmentOverview(assignments))
+}
+
+func HandleAssignmentsCreate(c *gin.Context) {
+	template(c, 200, templates.AssignmentsCreate(nil, map[string]string{}))
+}
+
+func HandleAssignmentsView(c *gin.Context) {
+	userId, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.AbortWithError(400, err)
+		return
+	}
+	assignment, err := database.GetAssignment(userId)
+	if err == database.ErrNotFound {
+		c.Status(404)
+		return
+	}
+	template(c, 200, templates.AssignmentsView(assignment))
+}
+
+func HandleCreateAssignment(c *gin.Context) {
+	name := c.PostForm("name")
+	Type := c.PostForm("type")
+	assignmentId, err := database.CreateAssignment(name, Type)
+	if err != nil {
+		c.AbortWithError(500, err)
+		return
+	}
+	fmt.Printf("Created assignment with id %d\n", assignmentId)
+	HandleAssignmentsIndex(c)
+}
+
+func HandleUpdateAssignment(c *gin.Context) {
+	assignmentId, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.AbortWithError(400, err)
+		return
+	}
+	assignment, err := database.GetAssignment(assignmentId)
+	if err != nil {
+		if err == database.ErrNotFound {
+			c.Status(404)
+			return
+		}
+		c.AbortWithError(500, err)
+		return
+	}
+	assignment.Name = c.PostForm("name")
+	assignment.Type = c.PostForm("type")
+	err = database.UpdateAssignment(assignmentId, assignment.Name, assignment.Type)
+	if err != nil {
+		c.AbortWithError(500, err)
+		return
+	}
+	c.Header("hx-push-url", "/assignments")
+	HandleAssignmentsIndex(c)
 }

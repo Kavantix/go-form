@@ -1,16 +1,9 @@
 package database
 
 import (
-	"errors"
 	"fmt"
-	"log"
 	"strings"
 	"time"
-)
-
-var (
-	ErrNotFound       = errors.New("entry not found")
-	ErrDuplicateEmail = errors.New("email already exists")
 )
 
 type UserRow struct {
@@ -40,7 +33,6 @@ func GetUsers(page, pageSize int) ([]UserRow, error) {
 		pageSize, page,
 	))
 	if err != nil {
-		log.Fatal(err)
 		return nil, fmt.Errorf("failed to query users: %w", err)
 	}
 	return users, nil
