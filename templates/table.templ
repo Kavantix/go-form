@@ -35,7 +35,7 @@ templ table[T any](resource resources.Resource[T], columns [](resources.ColumnCo
  								hx-get={ resource.Location(&row) }
  								hx-target="body"
  								hx-push-url="true"
- 								class="hover:bg-gray-100 border-b border-gray-200 py-10"
+ 								class="cursor-pointer hover:bg-gray-100 border-b border-gray-200 py-10"
 							>
 								for _, column := range columns {
 									<td class="px-4 py-4">{ fmt.Sprintf("%v", column.Value(&row)) }</td>

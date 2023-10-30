@@ -91,7 +91,7 @@ func table[T any](resource resources.Resource[T], columns [](resources.ColumnCon
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" hx-target=\"body\" hx-push-url=\"true\" class=\"hover:bg-gray-100 border-b border-gray-200 py-10\">")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" hx-target=\"body\" hx-push-url=\"true\" class=\"cursor-pointer hover:bg-gray-100 border-b border-gray-200 py-10\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
