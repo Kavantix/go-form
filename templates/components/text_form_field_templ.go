@@ -19,13 +19,6 @@ type TextFormFieldConfig[T any] struct {
 	Value       func(row *T) string
 }
 
-func (f *TextFormFieldConfig[T]) RenderFormField(value *T, validationError string) templ.Component {
-	return TextFormField[T](f, value, validationError)
-}
-func (f *TextFormFieldConfig[T]) Name() string {
-	return f.FieldName
-}
-
 func TextFormField[T any](config *TextFormFieldConfig[T], value *T, validationError string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
@@ -150,4 +143,12 @@ func TextFormField[T any](config *TextFormFieldConfig[T], value *T, validationEr
 		}
 		return templ_7745c5c3_Err
 	})
+}
+
+func (f *TextFormFieldConfig[T]) RenderFormField(value *T, validationError string) templ.Component {
+	return TextFormField[T](f, value, validationError)
+}
+
+func (f *TextFormFieldConfig[T]) Name() string {
+	return f.FieldName
 }

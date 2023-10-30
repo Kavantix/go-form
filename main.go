@@ -9,11 +9,6 @@ import (
 	_ "github.com/lib/pq"
 )
 
-type ViewContext struct {
-	View string
-	Data interface{}
-}
-
 func main() {
 	err := database.Connect("db", "postgres", "postgres", "postgres")
 	if err != nil {

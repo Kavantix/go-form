@@ -19,17 +19,6 @@ type SelectFormFieldConfig[T any] struct {
 	Value       func(row *T) string
 }
 
-func (f *SelectFormFieldConfig[T]) RenderFormField(value *T, validationError string) templ.Component {
-	val := ""
-	if value != nil {
-		val = f.Value(value)
-	}
-	return SelectFormField[T](f, val, validationError)
-}
-func (f *SelectFormFieldConfig[T]) Name() string {
-	return f.FieldName
-}
-
 func SelectFormField[T any](config *SelectFormFieldConfig[T], value string, validationError string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
@@ -158,4 +147,15 @@ func SelectFormField[T any](config *SelectFormFieldConfig[T], value string, vali
 		}
 		return templ_7745c5c3_Err
 	})
+}
+
+func (f *SelectFormFieldConfig[T]) RenderFormField(value *T, validationError string) templ.Component {
+	val := ""
+	if value != nil {
+		val = f.Value(value)
+	}
+	return SelectFormField[T](f, val, validationError)
+}
+func (f *SelectFormFieldConfig[T]) Name() string {
+	return f.FieldName
 }

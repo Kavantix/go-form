@@ -9,13 +9,6 @@ type TextFormFieldConfig[T any] struct {
 	Value       func(row *T) string
 }
 
-func (f *TextFormFieldConfig[T]) RenderFormField(value *T, validationError string) templ.Component {
-	return TextFormField[T](f, value, validationError)
-}
-func (f *TextFormFieldConfig[T]) Name() string {
-	return f.FieldName
-}
-
 templ TextFormField[T any](config (*TextFormFieldConfig[T]), value *T, validationError string) {
 	<label>
 		{ config.Label }
@@ -41,4 +34,12 @@ templ TextFormField[T any](config (*TextFormFieldConfig[T]), value *T, validatio
 			<p class="mt-2 text-sm text-red-600 dark:text-red-500">{ validationError }</p>
 		}
 	</label>
+}
+
+func (f *TextFormFieldConfig[T]) RenderFormField(value *T, validationError string) templ.Component {
+	return TextFormField[T](f, value, validationError)
+}
+
+func (f *TextFormFieldConfig[T]) Name() string {
+	return f.FieldName
 }
