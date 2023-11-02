@@ -1,0 +1,26 @@
+package templates
+
+import "github.com/Kavantix/go-form/resources"
+import "github.com/Kavantix/go-form/templates/components"
+
+templ ResourceOverview[T any](resource resources.Resource[T], rows []T) {
+	@Layout(resource.Location(nil)) {
+		@Table(resource, rows)
+		@components.Button("/users/create") {
+			Add { resource.Title() }
+		}
+	}
+}
+
+templ ResourceView[T any](resource resources.Resource[T], row *T, validationErrors map[string]string) {
+	@Layout(resource.Location(nil)) {
+		@components.Form(resource, row, validationErrors)
+	}
+}
+
+templ ResourceCreate[T any](resource resources.Resource[T], row *T, validationErrors map[string]string) {
+	@Layout(resource.Location(nil)) {
+		<h1>Create new { resource.Title() }</h1>
+		@components.Form(resource, row, validationErrors)
+	}
+}

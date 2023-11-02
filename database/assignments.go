@@ -67,7 +67,7 @@ func CreateAssignment(name, Type string) (int, error) {
 	return result.Id, nil
 }
 
-func UpdateAssignment(id int, name, Type string) error {
+func UpdateAssignment(id int32, name, Type string) error {
 	_, err := db.Exec(
 		`update assignments set name=$1, "type"=$2 where id = $3`,
 		name, Type, id,

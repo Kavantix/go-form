@@ -56,7 +56,7 @@ func CreateUser(name, email string, dateOfBirth time.Time) (int, error) {
 	return result.Id, nil
 }
 
-func UpdateUser(id int, name, email string, dateOfBirth time.Time) error {
+func UpdateUser(id int32, name, email string, dateOfBirth time.Time) error {
 	_, err := db.Exec(
 		"update users set name=$1, email=$2, date_of_birth=$3 where id = $4",
 		name, email, dateOfBirth, id,

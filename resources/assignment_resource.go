@@ -16,6 +16,32 @@ func (r AssignmentResource) Title() string {
 	return "Assignments"
 }
 
+func (r AssignmentResource) FetchPage(page, pageSize int) ([]database.AssignmentRow, error) {
+	return database.GetAssignments(page, pageSize)
+}
+
+func (r AssignmentResource) FetchRow(id int) (*database.AssignmentRow, error) {
+	return database.GetAssignment(id)
+}
+
+func (r AssignmentResource) ParseRow(id *int, formFields map[string]string) (*database.AssignmentRow, error) {
+	assignment := database.AssignmentRow{}
+	if id != nil {
+		assignment.Id = int32(*id)
+	}
+	assignment.Name = formFields["name"]
+	assignment.Type = formFields["type"]
+	return &assignment, nil
+}
+
+func (r AssignmentResource) CreateRow(assignment *database.AssignmentRow) (int, error) {
+	return database.CreateAssignment(assignment.Name, assignment.Type)
+}
+
+func (r AssignmentResource) UpdateRow(assignment *database.AssignmentRow) error {
+	return database.UpdateAssignment(assignment.Id, assignment.Name, assignment.Type)
+}
+
 func (r AssignmentResource) FormConfig() FormConfig[database.AssignmentRow] {
 	return FormConfig[database.AssignmentRow]{
 		SaveUrl: func(row *database.AssignmentRow) string {
