@@ -10,6 +10,10 @@ import "context"
 import "io"
 import "bytes"
 
+import "fmt"
+
+import . "github.com/Kavantix/go-form/interfaces"
+
 type TextFormFieldConfig[T any] struct {
 	Label       string
 	FieldName   string
@@ -19,7 +23,7 @@ type TextFormFieldConfig[T any] struct {
 	Value       func(row *T) string
 }
 
-func TextFormField[T any](config *TextFormFieldConfig[T], value *T, validationError string) templ.Component {
+func TextFormField[T any](form FormConfig[T], config *TextFormFieldConfig[T], value *T, validationError string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
 		if !templ_7745c5c3_IsBuffer {
@@ -32,7 +36,15 @@ func TextFormField[T any](config *TextFormFieldConfig[T], value *T, validationEr
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<label>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<label for=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(config.FieldName))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -41,7 +53,39 @@ func TextFormField[T any](config *TextFormFieldConfig[T], value *T, validationEr
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" <input")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" <input id=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(fmt.Sprintf("field-%s", config.FieldName)))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" hx-get=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(fmt.Sprintf("%s/validate", form.SaveUrl(value))))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" hx-trigger=\"keyup changed delay:250ms\" hx-target=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(fmt.Sprintf(`form label[for="%s"]`, config.FieldName)))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" hx-swap=\"outerHTML\" hx-select=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(fmt.Sprintf(`form label[for="%s"]`, config.FieldName)))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -51,7 +95,7 @@ func TextFormField[T any](config *TextFormFieldConfig[T], value *T, validationEr
 				return templ_7745c5c3_Err
 			}
 		}
-		if config.Type == "" {
+		if config.Type == "" || config.Type == "email" {
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" type=\"text\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
@@ -97,7 +141,7 @@ func TextFormField[T any](config *TextFormFieldConfig[T], value *T, validationEr
 			return templ_7745c5c3_Err
 		}
 		if validationError != "" {
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" class=\"block mb-2 w-full p-4 bg-red-50 border border-red-500 text-red-900 placeholder-red-700 text-sm rounded-lg focus:ring-red-500\"")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" class=\"block mb-2 w-full p-4 bg-red-50 border border-red-500 text-red-900 placeholder-red-700 sm:text-md rounded-lg focus:ring-red-500\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -145,8 +189,8 @@ func TextFormField[T any](config *TextFormFieldConfig[T], value *T, validationEr
 	})
 }
 
-func (f *TextFormFieldConfig[T]) RenderFormField(value *T, validationError string) templ.Component {
-	return TextFormField[T](f, value, validationError)
+func (f *TextFormFieldConfig[T]) RenderFormField(form FormConfig[T], value *T, validationError string) templ.Component {
+	return TextFormField[T](form, f, value, validationError)
 }
 
 func (f *TextFormFieldConfig[T]) Name() string {

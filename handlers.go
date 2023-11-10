@@ -25,6 +25,7 @@ func HandleResourceIndex[T any](resource resources.Resource[T]) func(c *gin.Cont
 		template(c, 200, templates.ResourceOverview(resource, rows))
 	}
 }
+
 func HandleResourceView[T any](resource resources.Resource[T]) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		id, err := strconv.Atoi(c.Param("id"))
@@ -40,9 +41,43 @@ func HandleResourceView[T any](resource resources.Resource[T]) func(c *gin.Conte
 		template(c, 200, templates.ResourceView(resource, row, nil))
 	}
 }
+
 func HandleResourceCreate[T any](resource resources.Resource[T]) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		template(c, 200, templates.ResourceCreate(resource, nil, map[string]string{}))
+	}
+}
+
+func HandleValidateResource[T any](resource resources.Resource[T]) func(c *gin.Context) {
+	return func(c *gin.Context) {
+		idParam, err := strconv.Atoi(c.Param("id"))
+		var id *int
+		if err == nil {
+			id = &idParam
+		}
+		formFields := map[string]string{}
+		formConfig := resource.FormConfig()
+		for _, field := range formConfig.Fields {
+			fieldName := field.Name()
+			formFields[fieldName] = c.Query(fieldName)
+		}
+		row, err := resource.ParseRow(id, formFields)
+		if err != nil {
+			if validationErr, isValidationErr := err.(resources.ValidationError); isValidationErr {
+				validationErrors := map[string]string{}
+				fmt.Printf("Validation failed %s: %s\n", resource.Title(), err)
+				validationErrors[validationErr.FieldName] = validationErr.Message
+				template(c, 422, templates.ResourceCreate(resource, row, validationErrors))
+				return
+			} else if parsingErr, isParsingErr := err.(resources.ParsingError); isParsingErr {
+				validationErrors := map[string]string{}
+				fmt.Printf("Parsing failed %s: %s\n", resource.Title(), err)
+				validationErrors[parsingErr.FieldName] = "Invalid syntax"
+				template(c, 422, templates.ResourceCreate(resource, row, validationErrors))
+				return
+			}
+		}
+		template(c, 200, templates.ResourceView(resource, row, nil))
 	}
 }
 
@@ -57,14 +92,18 @@ func HandleCreateResource[T any](resource resources.Resource[T]) func(c *gin.Con
 		}
 		row, err := resource.ParseRow(nil, formFields)
 		if err != nil {
-			if err, ok := err.(resources.ValidationError); ok {
+			if validationErr, ok := err.(resources.ValidationError); ok {
 				validationErrors := map[string]string{}
 				fmt.Printf("Failed to create %s: %s\n", resource.Title(), err)
-				validationErrors[err.FieldName] = err.Reason.Error()
+				validationErrors[validationErr.FieldName] = validationErr.Message
 				template(c, 422, templates.ResourceCreate(resource, row, validationErrors))
 				return
-			} else {
+			} else if parsingErr, ok := err.(resources.ParsingError); ok {
+				fmt.Printf("Failed to create %s: %s\n", resource.Title(), parsingErr)
 				template(c, 400, templates.ResourceCreate(resource, row, nil))
+				return
+			} else {
+				c.AbortWithError(500, err)
 				return
 			}
 
@@ -104,14 +143,18 @@ func HandleUpdateResource[T any](resource resources.Resource[T]) func(c *gin.Con
 		}
 		row, err := resource.ParseRow(&id, formFields)
 		if err != nil {
-			if err, ok := err.(resources.ValidationError); ok {
+			if validationErr, ok := err.(resources.ValidationError); ok {
 				validationErrors := map[string]string{}
-				fmt.Printf("Failed to update %s: %s\n", resource.Title(), err)
-				validationErrors[err.FieldName] = err.Reason.Error()
+				fmt.Printf("Failed to update %s: %s\n", resource.Title(), validationErr)
+				validationErrors[validationErr.FieldName] = validationErr.Reason.Error()
 				template(c, 422, templates.ResourceView(resource, row, validationErrors))
 				return
+			} else if parsingErr, ok := err.(resources.ParsingError); ok {
+				fmt.Printf("Failed to create %s: %s\n", resource.Title(), parsingErr)
+				template(c, 400, templates.ResourceCreate(resource, row, nil))
+				return
 			} else {
-				template(c, 400, templates.ResourceView(resource, row, nil))
+				c.AbortWithError(500, err)
 				return
 			}
 

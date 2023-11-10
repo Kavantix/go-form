@@ -1,5 +1,9 @@
 package components
 
+import "fmt"
+
+import . "github.com/Kavantix/go-form/interfaces"
+
 type TextFormFieldConfig[T any] struct {
 	Label       string
 	FieldName   string
@@ -9,12 +13,20 @@ type TextFormFieldConfig[T any] struct {
 	Value       func(row *T) string
 }
 
-templ TextFormField[T any](config (*TextFormFieldConfig[T]), value *T, validationError string) {
-	<label>
+templ TextFormField[T any](form (FormConfig[T]), config (*TextFormFieldConfig[T]), value *T, validationError string) {
+	<label
+ 		for={ config.FieldName }
+	>
 		{ config.Label }
 		<input
+ 			id={ fmt.Sprintf("field-%s", config.FieldName) }
+ 			hx-get={ fmt.Sprintf("%s/validate", form.SaveUrl(value)) }
+ 			hx-trigger="keyup changed delay:250ms"
+ 			hx-target={ fmt.Sprintf(`form label[for="%s"]`, config.FieldName) }
+ 			hx-swap="outerHTML"
+ 			hx-select={ fmt.Sprintf(`form label[for="%s"]`, config.FieldName) }
  			required?={ config.Required }
- 			if config.Type == "" {
+ 			if config.Type == "" || config.Type == "email" {
 				type="text"
 			} else {
 				type={ config.Type }
@@ -24,7 +36,7 @@ templ TextFormField[T any](config (*TextFormFieldConfig[T]), value *T, validatio
 			}
  			name={ config.FieldName }
  			if validationError != "" {
-				class="block mb-2 w-full p-4 bg-red-50 border border-red-500 text-red-900 placeholder-red-700 text-sm rounded-lg focus:ring-red-500"
+				class="block mb-2 w-full p-4 bg-red-50 border border-red-500 text-red-900 placeholder-red-700 sm:text-md rounded-lg focus:ring-red-500"
 			} else {
 				class="block mb-2 w-full p-4 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 sm:text-md focus:ring-blue-500 focus:border-blue-500"
 			}
@@ -36,8 +48,8 @@ templ TextFormField[T any](config (*TextFormFieldConfig[T]), value *T, validatio
 	</label>
 }
 
-func (f *TextFormFieldConfig[T]) RenderFormField(value *T, validationError string) templ.Component {
-	return TextFormField[T](f, value, validationError)
+func (f *TextFormFieldConfig[T]) RenderFormField(form FormConfig[T], value *T, validationError string) templ.Component {
+	return TextFormField[T](form, f, value, validationError)
 }
 
 func (f *TextFormFieldConfig[T]) Name() string {

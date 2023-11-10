@@ -9,5 +9,5 @@ type FormConfig[T any] struct {
 
 type FormField[T any] interface {
 	Name() string
-	RenderFormField(value *T, validationError string) templ.Component
+	RenderFormField(form FormConfig[T], value *T, validationError string) templ.Component
 }

@@ -34,9 +34,23 @@ func (r UserResource) ParseRow(id *int, formFields map[string]string) (*database
 	}
 	user.Name = formFields["name"]
 	user.Email = formFields["email"]
+	emailExists, err := database.IsEmailInUse(user.Email, user.Id)
+	if err != nil {
+		return &user, fmt.Errorf("failed to check email for duplicates: %w", err)
+	}
+	if emailExists {
+		return &user, ValidationError{
+			FieldName: "email",
+			Reason:    database.ErrDuplicateEmail,
+			Message:   "Email already used",
+		}
+	}
 	user.DateOfBirth, err = time.Parse("2006-01-02", formFields["date_of_birth"])
 	if err != nil {
-		return &user, fmt.Errorf("failed to parse date of birth: %w", err)
+		return &user, ParsingError{
+			FieldName: "date_of_birth",
+			Reason:    err,
+		}
 	}
 	return &user, nil
 }
@@ -70,7 +84,6 @@ func (r UserResource) FormConfig() FormConfig[database.UserRow] {
 				Label:       "Email",
 				FieldName:   "email",
 				Placeholder: "Enter an email",
-				Type:        "email",
 				Value:       func(row *database.UserRow) string { return row.Email },
 				Required:    true,
 			},

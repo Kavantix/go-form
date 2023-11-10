@@ -13,7 +13,7 @@ templ Form[T any](resource (Resource[T]), value *T, validationErrors map[string]
 templ form[T any](config (FormConfig[T]), value *T, validationErrors map[string]string) {
 	<form class="mb-6 p-4" action={ templ.URL(config.SaveUrl(value)) } method="POST">
 		for _, field := range config.Fields {
-			@field.RenderFormField(value, validationErrors[field.Name()])
+			@field.RenderFormField(config, value, validationErrors[field.Name()])
 		}
 		@Button("") {
 			Save

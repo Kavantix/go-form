@@ -67,7 +67,7 @@ func form[T any](config FormConfig[T], value *T, validationErrors map[string]str
 			return templ_7745c5c3_Err
 		}
 		for _, field := range config.Fields {
-			templ_7745c5c3_Err = field.RenderFormField(value, validationErrors[field.Name()]).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = field.RenderFormField(config, value, validationErrors[field.Name()]).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

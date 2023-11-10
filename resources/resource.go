@@ -8,11 +8,21 @@ import (
 
 type ValidationError struct {
 	FieldName string
+	Message   string
 	Reason    error
 }
 
 func (e ValidationError) Error() string {
 	return fmt.Sprintf("Validation of field '%s' failed with error: %s", e.FieldName, e.Reason.Error())
+}
+
+type ParsingError struct {
+	FieldName string
+	Reason    error
+}
+
+func (e ParsingError) Error() string {
+	return fmt.Sprintf("Parsing of field '%s' failed with error: %s", e.FieldName, e.Reason.Error())
 }
 
 type ColumnConfig[T any] struct {

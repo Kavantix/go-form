@@ -1,5 +1,7 @@
 package components
 
+import . "github.com/Kavantix/go-form/interfaces"
+
 type SelectFormFieldConfig[T any] struct {
 	Label       string
 	FieldName   string
@@ -32,7 +34,7 @@ templ SelectFormField[T any](config (*SelectFormFieldConfig[T]), value string, v
 	</label>
 }
 
-func (f *SelectFormFieldConfig[T]) RenderFormField(value *T, validationError string) templ.Component {
+func (f *SelectFormFieldConfig[T]) RenderFormField(form FormConfig[T], value *T, validationError string) templ.Component {
 	val := ""
 	if value != nil {
 		val = f.Value(value)

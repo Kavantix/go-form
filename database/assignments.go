@@ -15,10 +15,10 @@ type AssignmentRow struct {
 
 func GetAssignments(page, pageSize int) ([]AssignmentRow, error) {
 	assignments := []AssignmentRow{}
-	err := db.Select(&assignments, fmt.Sprintf(
-		`select id, name, "order", "type" from assignments order by "order" limit %d offset %d`,
+	err := db.Select(&assignments,
+		`select id, name, "order", "type" from assignments order by "order" limit $1 offset $2`,
 		pageSize, page,
-	))
+	)
 	if err != nil {
 		log.Fatal(err)
 		return nil, fmt.Errorf("failed to query assignments: %w", err)

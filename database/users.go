@@ -28,14 +28,23 @@ func GetUser(id int) (*UserRow, error) {
 
 func GetUsers(page, pageSize int) ([]UserRow, error) {
 	users := []UserRow{}
-	err := db.Select(&users, fmt.Sprintf(
-		"select id, name, email, date_of_birth from users order by id limit %d offset %d",
+	err := db.Select(&users,
+		"select id, name, email, date_of_birth from users order by id limit $1 offset $2",
 		pageSize, page,
-	))
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query users: %w", err)
 	}
 	return users, nil
+}
+
+func IsEmailInUse(email string, excludeUserId int32) (bool, error) {
+	result := CountResult{}
+	err := db.Get(&result, "select count(*) as count from users where email = $1 and id != $2", email, excludeUserId)
+	if err != nil {
+		return true, err
+	}
+	return result.Count > 0, nil
 }
 
 func CreateUser(name, email string, dateOfBirth time.Time) (int, error) {

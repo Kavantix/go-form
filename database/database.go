@@ -15,6 +15,10 @@ var (
 	db *sqlx.DB
 )
 
+type CountResult struct {
+	Count int `db:"count"`
+}
+
 func Connect(host, username, password, database string) error {
 	connStr := fmt.Sprintf(
 		"postgres://%s:%s@%s/%s?sslmode=disable",
