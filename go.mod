@@ -6,6 +6,7 @@ require (
 	github.com/a-h/templ v0.2.428
 	github.com/bearbin/go-age v0.0.0-20210220235509-f0fa00c278ce
 	github.com/gin-gonic/gin v1.9.1
+	github.com/google/uuid v1.4.0
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/lib/pq v1.2.0
 )

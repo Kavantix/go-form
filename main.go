@@ -4,6 +4,8 @@ import (
 	"log"
 
 	"github.com/Kavantix/go-form/database"
+	"github.com/Kavantix/go-form/disks"
+	"github.com/Kavantix/go-form/interfaces"
 	"github.com/Kavantix/go-form/resources"
 	"github.com/gin-gonic/gin"
 
@@ -22,6 +24,8 @@ func RegisterResource[T any](e *gin.Engine, resource resources.Resource[T]) {
 }
 
 func main() {
+	var disk interfaces.Disk
+	disk = disks.NewLocal("./storage/public", "/storage", disks.LocalDiskModePublic)
 	err := database.Connect("db", "postgres", "postgres", "postgres")
 	if err != nil {
 		log.Fatal(err)
@@ -30,6 +34,8 @@ func main() {
 	database.Debug()
 
 	r := gin.Default()
+	r.Static("/storage", "./storage/public/")
+	r.POST("/upload", HandleUploadFile(disk))
 	RegisterResource(r, resources.UserResource{})
 	RegisterResource(r, resources.AssignmentResource{})
 

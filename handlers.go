@@ -5,10 +5,44 @@ import (
 	"strconv"
 
 	"github.com/Kavantix/go-form/database"
+	"github.com/Kavantix/go-form/interfaces"
 	"github.com/Kavantix/go-form/resources"
 	"github.com/Kavantix/go-form/templates"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
+
+func HandleUploadFile(disk interfaces.Disk) func(c *gin.Context) {
+	return func(c *gin.Context) {
+		form, err := c.MultipartForm()
+		if err != nil {
+			c.AbortWithStatus(406)
+			c.Writer.WriteString("only multipart/form-data allowed")
+			return
+		}
+		files := form.File["file"]
+		if files == nil || len(files) == 0 {
+			c.AbortWithStatus(400)
+			c.Writer.WriteString("missing 'file' part")
+			return
+		}
+		file, err := files[0].Open()
+		if err != nil {
+			c.AbortWithError(500, fmt.Errorf("Failed to open uploaded file: %w", err))
+			return
+		}
+		defer file.Close()
+		id := uuid.New().String()
+		err = disk.Put(id, file)
+		if err != nil {
+			c.AbortWithError(500, fmt.Errorf("Failed to write uploaded file: %w", err))
+			return
+		}
+		c.JSON(201, gin.H{
+			"id": id,
+		})
+	}
+}
 
 func HandleResourceIndex[T any](resource resources.Resource[T]) func(c *gin.Context) {
 	return func(c *gin.Context) {
