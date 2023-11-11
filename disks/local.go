@@ -25,6 +25,7 @@ type Local struct {
 func NewLocal(rootDirirectory, baseUrl string, mode localDiskMode) *Local {
 	disk := Local{
 		rootdir:     rootDirirectory,
+		baseUrl:     baseUrl,
 		permissions: 0700,
 	}
 	if mode {
@@ -85,7 +86,7 @@ func (l *Local) Url(location string) (string, error) {
 		return "", fmt.Errorf("Failed to get url for location '%s': %w", location, err)
 	}
 	builder := strings.Builder{}
-	builder.WriteString(l.rootdir)
+	builder.WriteString(l.baseUrl)
 	builder.WriteByte('/')
 	builder.WriteString(location)
 	return builder.String(), nil

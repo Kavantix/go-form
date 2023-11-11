@@ -38,8 +38,14 @@ func HandleUploadFile(disk interfaces.Disk) func(c *gin.Context) {
 			c.AbortWithError(500, fmt.Errorf("Failed to write uploaded file: %w", err))
 			return
 		}
+		url, err := disk.Url(id)
+		if err != nil {
+			c.AbortWithError(500, fmt.Errorf("Failed to write uploaded file: %w", err))
+			return
+		}
 		c.JSON(201, gin.H{
-			"id": id,
+			"id":  id,
+			"url": url,
 		})
 	}
 }
