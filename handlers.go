@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/Kavantix/go-form/database"
 	"github.com/Kavantix/go-form/interfaces"
@@ -26,6 +27,11 @@ func HandleUploadFile(disk interfaces.Disk) func(c *gin.Context) {
 			c.Writer.WriteString("missing 'file' part")
 			return
 		}
+		extension := ""
+		parts := strings.Split(files[0].Filename, ".")
+		if len(parts) > 1 {
+			extension = parts[len(parts)-1]
+		}
 		file, err := files[0].Open()
 		if err != nil {
 			c.AbortWithError(500, fmt.Errorf("Failed to open uploaded file: %w", err))
@@ -33,12 +39,16 @@ func HandleUploadFile(disk interfaces.Disk) func(c *gin.Context) {
 		}
 		defer file.Close()
 		id := uuid.New().String()
-		err = disk.Put(id, file)
+		location := id
+		if extension != "" {
+			location = fmt.Sprintf("%s.%s", id, extension)
+		}
+		err = disk.Put(location, file)
 		if err != nil {
 			c.AbortWithError(500, fmt.Errorf("Failed to write uploaded file: %w", err))
 			return
 		}
-		url, err := disk.Url(id)
+		url, err := disk.Url(location)
 		if err != nil {
 			c.AbortWithError(500, fmt.Errorf("Failed to write uploaded file: %w", err))
 			return
