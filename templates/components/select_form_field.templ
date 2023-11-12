@@ -1,11 +1,9 @@
 package components
 
-import "fmt"
-
 import . "github.com/Kavantix/go-form/interfaces"
 
 type SelectFormFieldConfig[T any] struct {
-	Label       string
+	FieldLabel  string
 	FieldName   string
 	Placeholder string
 	Options     []struct{ Label, Value string }
@@ -14,21 +12,26 @@ type SelectFormFieldConfig[T any] struct {
 }
 
 templ SelectFormField[T any](config (*SelectFormFieldConfig[T]), value string) {
-	<label>
-		{ config.Label }
+	@formField(config) {
 		<select
  			required?={ config.Required }
- 			x-model={ fmt.Sprintf(`fields["%s"]`, config.FieldName) }
- 			@input.debounce={ "$dispatch('validate')" }
+ 			x-model="value"
+ 			@input.debounce.50ms={ "$dispatch('validate')" }
  			name={ config.FieldName }
+ 			:aria-invalid="(!valid).toString()"
+ 			class="cursor-pointer block mb-2 w-full p-4 sm:text-md rounded-lg"
+ 			:class={ `
+      valid
+      ? "bg-gray-50 text-gray-900 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+      : "bg-red-50 border border-red-500 text-red-900 placeholder-red-700 focus:ring-red-500 focus:border-red-500"
+      ` }
  			placeholder={ config.Placeholder }
 		>
 			for _, option := range config.Options {
 				<option selected?={ value == option.Value } value={ option.Value }>{ option.Label }</option>
 			}
 		</select>
-		<p class="mt-2 text-sm text-red-600 dark:text-red-500" x-text={ fmt.Sprintf(`validationErrors["%s"]`, config.FieldName) }></p>
-	</label>
+	}
 }
 
 func (f *SelectFormFieldConfig[T]) RenderFormField(form FormConfig[T], value *T) templ.Component {
@@ -41,6 +44,10 @@ func (f *SelectFormFieldConfig[T]) RenderFormField(form FormConfig[T], value *T)
 
 func (f *SelectFormFieldConfig[T]) Name() string {
 	return f.FieldName
+}
+
+func (f *SelectFormFieldConfig[T]) Label() string {
+	return f.FieldLabel
 }
 
 func (f *SelectFormFieldConfig[T]) Value(row *T) string {

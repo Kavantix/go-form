@@ -1,6 +1,7 @@
 package resources
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -31,6 +32,13 @@ func (r AssignmentResource) ParseRow(id *int, formFields map[string]string) (*da
 	}
 	assignment.Name = formFields["name"]
 	assignment.Type = formFields["type"]
+	if assignment.Type == "sound" {
+		return &assignment, ValidationError{
+			FieldName: "type",
+			Reason:    errors.New("unsupported type"),
+			Message:   "Sound type is not supported yet",
+		}
+	}
 	return &assignment, nil
 }
 
@@ -53,14 +61,14 @@ func (r AssignmentResource) FormConfig() FormConfig[database.AssignmentRow] {
 		},
 		Fields: [](FormField[database.AssignmentRow]){
 			&components.TextFormFieldConfig[database.AssignmentRow]{
-				Label:       "Name",
+				FieldLabel:  "Name",
 				FieldName:   "name",
 				Placeholder: "Enter a name",
 				Required:    true,
 				FieldValue:  func(row *database.AssignmentRow) string { return row.Name },
 			},
 			&components.SelectFormFieldConfig[database.AssignmentRow]{
-				Label:       "Type",
+				FieldLabel:  "Type",
 				FieldName:   "type",
 				Placeholder: "Choose a type",
 				Options: []struct{ Label, Value string }{

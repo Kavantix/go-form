@@ -83,14 +83,14 @@ func (r UserResource) FormConfig() FormConfig[database.UserRow] {
 		},
 		Fields: [](FormField[database.UserRow]){
 			&components.TextFormFieldConfig[database.UserRow]{
-				Label:       "Name",
+				FieldLabel:  "Name",
 				FieldName:   "name",
 				Placeholder: "Enter a name",
 				FieldValue:  func(row *database.UserRow) string { return row.Name },
 				Required:    true,
 			},
 			&components.TextFormFieldConfig[database.UserRow]{
-				Label:       "Email",
+				FieldLabel:  "Email",
 				FieldName:   "email",
 				Placeholder: "Enter an email",
 				Type:        "email",
@@ -98,7 +98,7 @@ func (r UserResource) FormConfig() FormConfig[database.UserRow] {
 				Required:    true,
 			},
 			&components.TextFormFieldConfig[database.UserRow]{
-				Label:       "Birthdate",
+				FieldLabel:  "Birthdate",
 				FieldName:   "date_of_birth",
 				Placeholder: "Enter the date of birth",
 				Type:        "date",

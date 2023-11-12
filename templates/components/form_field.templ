@@ -1,0 +1,17 @@
+package components
+
+import "fmt"
+import . "github.com/Kavantix/go-form/interfaces"
+
+templ formField[T any](config FormField[T]) {
+	<label
+ 		x-data={ fmt.Sprintf(`formField("%s")`, config.Name()) }
+ 		@input.debounce={ "$dispatch('validate')" }
+	>
+		{ config.Label() }
+		{ children... }
+		<template x-if="!valid">
+			<p class="mt-2 text-sm text-red-600 dark:text-red-500" x-text="error"></p>
+		</template>
+	</label>
+}

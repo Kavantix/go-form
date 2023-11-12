@@ -9,6 +9,7 @@ type FormConfig[T any] struct {
 
 type FormField[T any] interface {
 	Name() string
+	Label() string
 	RenderFormField(form FormConfig[T], value *T) templ.Component
 	Value(row *T) string
 }
