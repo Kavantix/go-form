@@ -1,5 +1,8 @@
 package components
 
+import "strings"
+import "fmt"
+
 import . "github.com/Kavantix/go-form/interfaces"
 
 type Resource[T any] interface {
@@ -10,11 +13,49 @@ templ Form[T any](resource (Resource[T]), value *T, validationErrors map[string]
 	@form(resource.FormConfig(), value, validationErrors)
 }
 
-templ form[T any](config (FormConfig[T]), value *T, validationErrors map[string]string) {
-	<form class="mb-6 p-4" action={ templ.URL(config.SaveUrl(value)) } method="POST">
-		for _, field := range config.Fields {
-			@field.RenderFormField(config, value, validationErrors[field.Name()])
+func buildData[T any](config FormConfig[T], row *T, validationErrors map[string]string) string {
+	builder := strings.Builder{}
+	builder.WriteString("{ validationErrors: {")
+	i := 0
+	for name, error := range validationErrors {
+		builder.WriteByte('"')
+		builder.WriteString(name)
+		builder.WriteString(`": "`)
+		builder.WriteString(error)
+		builder.WriteByte('"')
+		if i != len(validationErrors)-1 {
+			builder.WriteByte(',')
 		}
+		i += 1
+	}
+	builder.WriteString("}, fields: {")
+	fields := config.Fields
+	for i, field := range fields {
+		builder.WriteByte('"')
+		builder.WriteString(field.Name())
+		builder.WriteString(`": "`)
+		builder.WriteString(field.Value(row))
+		builder.WriteByte('"')
+		if i != len(fields)-1 {
+			builder.WriteByte(',')
+		}
+	}
+	builder.WriteString("} }")
+	return builder.String()
+}
+
+templ form[T any](config (FormConfig[T]), row *T, validationErrors map[string]string) {
+	<form
+ 		x-data={ buildData(config, row, validationErrors) }
+ 		@validate={ fmt.Sprintf(`validateForm("%s/validate", $data)`, config.SaveUrl(row)) }
+ 		class="mb-6 p-4"
+ 		action={ templ.URL(config.SaveUrl(row)) }
+ 		method="POST"
+	>
+		for _, field := range config.Fields {
+			@field.RenderFormField(config, row)
+		}
+		<br/>
 		@Button("") {
 			Save
 		}

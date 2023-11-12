@@ -92,6 +92,7 @@ func main() {
 
 	r := gin.Default()
 	r.Static("/storage", "./storage/public/")
+	r.Static("/js", "./public/js/")
 	r.POST("/upload", HandleUploadFile(disk))
 	RegisterResource(r, resources.UserResource{})
 	RegisterResource(r, resources.AssignmentResource{})

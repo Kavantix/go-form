@@ -1,6 +1,7 @@
 package resources
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -50,6 +51,14 @@ func (r UserResource) ParseRow(id *int, formFields map[string]string) (*database
 		return &user, ParsingError{
 			FieldName: "date_of_birth",
 			Reason:    err,
+			Message:   "Invalid date",
+		}
+	}
+	if age.Age(user.DateOfBirth) < 18 {
+		return &user, ValidationError{
+			FieldName: "date_of_birth",
+			Reason:    errors.New("age below 18"),
+			Message:   "Minimum age is 18",
 		}
 	}
 	return &user, nil
@@ -77,14 +86,15 @@ func (r UserResource) FormConfig() FormConfig[database.UserRow] {
 				Label:       "Name",
 				FieldName:   "name",
 				Placeholder: "Enter a name",
-				Value:       func(row *database.UserRow) string { return row.Name },
+				FieldValue:  func(row *database.UserRow) string { return row.Name },
 				Required:    true,
 			},
 			&components.TextFormFieldConfig[database.UserRow]{
 				Label:       "Email",
 				FieldName:   "email",
 				Placeholder: "Enter an email",
-				Value:       func(row *database.UserRow) string { return row.Email },
+				Type:        "email",
+				FieldValue:  func(row *database.UserRow) string { return row.Email },
 				Required:    true,
 			},
 			&components.TextFormFieldConfig[database.UserRow]{
@@ -92,7 +102,7 @@ func (r UserResource) FormConfig() FormConfig[database.UserRow] {
 				FieldName:   "date_of_birth",
 				Placeholder: "Enter the date of birth",
 				Type:        "date",
-				Value:       func(row *database.UserRow) string { return row.DateOfBirth.Format("2006-01-02") },
+				FieldValue:  func(row *database.UserRow) string { return row.DateOfBirth.Format("2006-01-02") },
 				Required:    true,
 			},
 		},

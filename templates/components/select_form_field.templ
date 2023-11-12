@@ -1,5 +1,7 @@
 package components
 
+import "fmt"
+
 import . "github.com/Kavantix/go-form/interfaces"
 
 type SelectFormFieldConfig[T any] struct {
@@ -8,39 +10,39 @@ type SelectFormFieldConfig[T any] struct {
 	Placeholder string
 	Options     []struct{ Label, Value string }
 	Required    bool
-	Value       func(row *T) string
+	FieldValue  func(row *T) string
 }
 
-templ SelectFormField[T any](config (*SelectFormFieldConfig[T]), value string, validationError string) {
+templ SelectFormField[T any](config (*SelectFormFieldConfig[T]), value string) {
 	<label>
 		{ config.Label }
 		<select
  			required?={ config.Required }
+ 			x-model={ fmt.Sprintf(`fields["%s"]`, config.FieldName) }
+ 			@input.debounce={ "$dispatch('validate')" }
  			name={ config.FieldName }
- 			if validationError != "" {
-				class="cursor-pointer block mb-2 w-full p-4 bg-red-50 border border-red-500 text-red-900 placeholder-red-700 text-sm rounded-lg focus:ring-red-500"
-			} else {
-				class="cursor-pointer block mb-2 w-full p-4 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 sm:text-md focus:ring-blue-500 focus:border-blue-500"
-			}
  			placeholder={ config.Placeholder }
 		>
 			for _, option := range config.Options {
 				<option selected?={ value == option.Value } value={ option.Value }>{ option.Label }</option>
 			}
 		</select>
-		if validationError != "" {
-			<p class="mt-2 text-sm text-red-600 dark:text-red-500">{ validationError }</p>
-		}
+		<p class="mt-2 text-sm text-red-600 dark:text-red-500" x-text={ fmt.Sprintf(`validationErrors["%s"]`, config.FieldName) }></p>
 	</label>
 }
 
-func (f *SelectFormFieldConfig[T]) RenderFormField(form FormConfig[T], value *T, validationError string) templ.Component {
+func (f *SelectFormFieldConfig[T]) RenderFormField(form FormConfig[T], value *T) templ.Component {
 	val := ""
 	if value != nil {
 		val = f.Value(value)
 	}
-	return SelectFormField[T](f, val, validationError)
+	return SelectFormField[T](f, val)
 }
+
 func (f *SelectFormFieldConfig[T]) Name() string {
 	return f.FieldName
+}
+
+func (f *SelectFormFieldConfig[T]) Value(row *T) string {
+	return f.FieldValue(row)
 }

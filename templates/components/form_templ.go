@@ -10,6 +10,9 @@ import "context"
 import "io"
 import "bytes"
 
+import "strings"
+import "fmt"
+
 import . "github.com/Kavantix/go-form/interfaces"
 
 type Resource[T any] interface {
@@ -40,7 +43,38 @@ func Form[T any](resource Resource[T], value *T, validationErrors map[string]str
 	})
 }
 
-func form[T any](config FormConfig[T], value *T, validationErrors map[string]string) templ.Component {
+func buildData[T any](config FormConfig[T], row *T, validationErrors map[string]string) string {
+	builder := strings.Builder{}
+	builder.WriteString("{ validationErrors: {")
+	i := 0
+	for name, error := range validationErrors {
+		builder.WriteByte('"')
+		builder.WriteString(name)
+		builder.WriteString(`": "`)
+		builder.WriteString(error)
+		builder.WriteByte('"')
+		if i != len(validationErrors)-1 {
+			builder.WriteByte(',')
+		}
+		i += 1
+	}
+	builder.WriteString("}, fields: {")
+	fields := config.Fields
+	for i, field := range fields {
+		builder.WriteByte('"')
+		builder.WriteString(field.Name())
+		builder.WriteString(`": "`)
+		builder.WriteString(field.Value(row))
+		builder.WriteByte('"')
+		if i != len(fields)-1 {
+			builder.WriteByte(',')
+		}
+	}
+	builder.WriteString("} }")
+	return builder.String()
+}
+
+func form[T any](config FormConfig[T], row *T, validationErrors map[string]string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
 		if !templ_7745c5c3_IsBuffer {
@@ -53,11 +87,27 @@ func form[T any](config FormConfig[T], value *T, validationErrors map[string]str
 			templ_7745c5c3_Var2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<form class=\"mb-6 p-4\" action=\"")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<form x-data=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var3 templ.SafeURL = templ.URL(config.SaveUrl(value))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(buildData(config, row, validationErrors)))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" @validate=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(fmt.Sprintf(`validateForm("%s/validate", $data)`, config.SaveUrl(row))))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" class=\"mb-6 p-4\" action=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var3 templ.SafeURL = templ.URL(config.SaveUrl(row))
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(string(templ_7745c5c3_Var3)))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
@@ -67,10 +117,14 @@ func form[T any](config FormConfig[T], value *T, validationErrors map[string]str
 			return templ_7745c5c3_Err
 		}
 		for _, field := range config.Fields {
-			templ_7745c5c3_Err = field.RenderFormField(config, value, validationErrors[field.Name()]).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = field.RenderFormField(config, row).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<br>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
 		templ_7745c5c3_Var4 := templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 			templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)

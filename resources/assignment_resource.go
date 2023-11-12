@@ -57,7 +57,7 @@ func (r AssignmentResource) FormConfig() FormConfig[database.AssignmentRow] {
 				FieldName:   "name",
 				Placeholder: "Enter a name",
 				Required:    true,
-				Value:       func(row *database.AssignmentRow) string { return row.Name },
+				FieldValue:  func(row *database.AssignmentRow) string { return row.Name },
 			},
 			&components.SelectFormFieldConfig[database.AssignmentRow]{
 				Label:       "Type",
@@ -73,8 +73,8 @@ func (r AssignmentResource) FormConfig() FormConfig[database.AssignmentRow] {
 						Value: "text",
 					},
 				},
-				Required: true,
-				Value:    func(row *database.AssignmentRow) string { return row.Type },
+				Required:   true,
+				FieldValue: func(row *database.AssignmentRow) string { return row.Type },
 			},
 		},
 	}

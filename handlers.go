@@ -111,23 +111,29 @@ func HandleValidateResource[T any](resource resources.Resource[T]) func(c *gin.C
 			fieldName := field.Name()
 			formFields[fieldName] = c.Query(fieldName)
 		}
-		row, err := resource.ParseRow(id, formFields)
+		_, err = resource.ParseRow(id, formFields)
 		if err != nil {
 			if validationErr, isValidationErr := err.(resources.ValidationError); isValidationErr {
 				validationErrors := map[string]string{}
 				fmt.Printf("Validation failed %s: %s\n", resource.Title(), err)
 				validationErrors[validationErr.FieldName] = validationErr.Message
-				template(c, 422, templates.ResourceCreate(resource, row, validationErrors))
+				c.JSON(422, gin.H{
+					"validationErrors": validationErrors,
+				})
 				return
 			} else if parsingErr, isParsingErr := err.(resources.ParsingError); isParsingErr {
 				validationErrors := map[string]string{}
 				fmt.Printf("Parsing failed %s: %s\n", resource.Title(), err)
-				validationErrors[parsingErr.FieldName] = "Invalid syntax"
-				template(c, 422, templates.ResourceCreate(resource, row, validationErrors))
+				validationErrors[parsingErr.FieldName] = parsingErr.Message
+				c.JSON(422, gin.H{
+					"validationErrors": validationErrors,
+				})
 				return
 			}
 		}
-		template(c, 200, templates.ResourceView(resource, row, nil))
+		c.JSON(200, gin.H{
+			"validationErrors": gin.H{},
+		})
 	}
 }
 

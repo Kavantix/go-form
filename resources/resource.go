@@ -19,6 +19,7 @@ func (e ValidationError) Error() string {
 type ParsingError struct {
 	FieldName string
 	Reason    error
+	Message   string
 }
 
 func (e ParsingError) Error() string {
