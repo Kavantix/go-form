@@ -10,8 +10,6 @@ import "context"
 import "io"
 import "bytes"
 
-import "fmt"
-
 import . "github.com/Kavantix/go-form/interfaces"
 
 type TextFormFieldConfig[T any] struct {
@@ -42,20 +40,18 @@ func TextFormField[T any](form FormConfig[T], config *TextFormFieldConfig[T], va
 				templ_7745c5c3_Buffer = templ.GetBuffer()
 				defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<input id=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(fmt.Sprintf("field-%s", config.FieldName)))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" x-model=\"value\"")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<input :id=\"fieldId\" x-model=\"value\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if config.Required {
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" required")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			if config.Required {
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" aria-required")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -87,7 +83,7 @@ func TextFormField[T any](form FormConfig[T], config *TextFormFieldConfig[T], va
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" :aria-invalid=\"(!valid).toString()\" class=\"block mb-2 w-full p-4 border rounded-lg sm:text-md\" :class=\"")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" :aria-invalid=\"!valid\" :aria-errormessage=\"errorId\" class=\"block mb-2 w-full p-4 border rounded-lg sm:text-md\" :class=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

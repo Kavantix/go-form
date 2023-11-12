@@ -4,14 +4,23 @@ import "fmt"
 import . "github.com/Kavantix/go-form/interfaces"
 
 templ formField[T any](config FormField[T]) {
-	<label
+	<div
  		x-data={ fmt.Sprintf(`formField("%s")`, config.Name()) }
  		@input.debounce={ "$dispatch('validate')" }
 	>
-		{ config.Label() }
+		<label
+ 			:for="fieldId"
+		>
+			{ config.Label() }
+		</label>
 		{ children... }
 		<template x-if="!valid">
-			<p class="mt-2 text-sm text-red-600 dark:text-red-500" x-text="error"></p>
+			<p
+ 				:id="errorId"
+ 				aria-live="true"
+ 				class="mt-2 text-sm text-red-600 dark:text-red-500"
+ 				x-text="error"
+			></p>
 		</template>
-	</label>
+	</div>
 }

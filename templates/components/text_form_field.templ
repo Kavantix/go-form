@@ -1,7 +1,5 @@
 package components
 
-import "fmt"
-
 import . "github.com/Kavantix/go-form/interfaces"
 
 type TextFormFieldConfig[T any] struct {
@@ -16,16 +14,18 @@ type TextFormFieldConfig[T any] struct {
 templ TextFormField[T any](form (FormConfig[T]), config (*TextFormFieldConfig[T]), value *T) {
 	@formField(config) {
 		<input
- 			id={ fmt.Sprintf("field-%s", config.FieldName) }
+ 			:id="fieldId"
  			x-model="value"
  			required?={ config.Required }
+ 			aria-required?={ config.Required }
  			if config.Type == "" {
 				type="text"
 			} else {
 				type={ config.Type }
 			}
  			name={ config.FieldName }
- 			:aria-invalid="(!valid).toString()"
+ 			:aria-invalid="!valid"
+ 			:aria-errormessage="errorId"
  			class="block mb-2 w-full p-4 border rounded-lg sm:text-md"
  			:class={ `
         valid

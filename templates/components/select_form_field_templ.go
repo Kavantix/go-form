@@ -40,7 +40,7 @@ func SelectFormField[T any](config *SelectFormFieldConfig[T], value string) temp
 				templ_7745c5c3_Buffer = templ.GetBuffer()
 				defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<select")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<select :id=\"fieldId\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -66,7 +66,7 @@ func SelectFormField[T any](config *SelectFormFieldConfig[T], value string) temp
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" :aria-invalid=\"(!valid).toString()\" class=\"cursor-pointer block mb-2 w-full p-4 sm:text-md rounded-lg\" :class=\"")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" :aria-invalid=\"!valid\" :aria-errormessage=\"errorId\" class=\"cursor-pointer block mb-2 w-full p-4 sm:text-md rounded-lg\" :class=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

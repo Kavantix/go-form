@@ -19,5 +19,12 @@ document.addEventListener('alpine:init', () => {
     get error() { return this.$data.validationErrors[fieldName] },
     get value() { return this.$data.fields[fieldName] },
     set value(newValue) { this.$data.fields[fieldName] = newValue },
+    errorId: "",
+    fieldId: "",
+    init() {
+      this.errorId = this.$id('error')
+      this.fieldId = this.$id('field')
+      console.log('test', this.$data)
+    },
   }))
 })
