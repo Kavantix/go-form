@@ -40,7 +40,7 @@ func SelectFormField[T any](config *SelectFormFieldConfig[T], value string) temp
 				templ_7745c5c3_Buffer = templ.GetBuffer()
 				defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<select :id=\"fieldId\"")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<select x-bind=\"input\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -50,23 +50,7 @@ func SelectFormField[T any](config *SelectFormFieldConfig[T], value string) temp
 					return templ_7745c5c3_Err
 				}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" x-model=\"value\" @input.debounce.50ms=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString("$dispatch('validate')"))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" name=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(config.FieldName))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" :aria-invalid=\"!valid\" :aria-errormessage=\"errorId\" class=\"cursor-pointer block mb-2 w-full p-4 sm:text-md rounded-lg\" :class=\"")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" class=\"cursor-pointer block mb-2 w-full p-4 sm:text-md rounded-lg\" :class=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -132,7 +116,7 @@ func SelectFormField[T any](config *SelectFormFieldConfig[T], value string) temp
 			}
 			return templ_7745c5c3_Err
 		})
-		templ_7745c5c3_Err = formField(config).Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = formField(config, formFieldDebounce{Millis: 20}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

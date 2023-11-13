@@ -14,8 +14,7 @@ type TextFormFieldConfig[T any] struct {
 templ TextFormField[T any](form (FormConfig[T]), config (*TextFormFieldConfig[T]), value *T) {
 	@formField(config) {
 		<input
- 			:id="fieldId"
- 			x-model="value"
+ 			x-bind="input"
  			required?={ config.Required }
  			aria-required?={ config.Required }
  			if config.Type == "" {
@@ -23,9 +22,6 @@ templ TextFormField[T any](form (FormConfig[T]), config (*TextFormFieldConfig[T]
 			} else {
 				type={ config.Type }
 			}
- 			name={ config.FieldName }
- 			:aria-invalid="!valid"
- 			:aria-errormessage="errorId"
  			class="block mb-2 w-full p-4 border rounded-lg sm:text-md"
  			:class={ `
         valid

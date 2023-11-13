@@ -11,9 +11,10 @@ import "io"
 import "bytes"
 
 import "fmt"
+import "strings"
 import . "github.com/Kavantix/go-form/interfaces"
 
-func formField[T any](config FormField[T]) templ.Component {
+func formField[T any](config FormField[T], opts ...formFieldOption) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
 		if !templ_7745c5c3_IsBuffer {
@@ -30,15 +31,7 @@ func formField[T any](config FormField[T]) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(fmt.Sprintf(`formField("%s")`, config.Name())))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" @input.debounce=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString("$dispatch('validate')"))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(fmt.Sprintf(`formField("%s", %s)`, config.Name(), buildFormFieldOptions(opts))))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -68,4 +61,28 @@ func formField[T any](config FormField[T]) templ.Component {
 		}
 		return templ_7745c5c3_Err
 	})
+}
+
+type formFieldOption interface {
+	formFieldOption()
+}
+
+type formFieldDebounce struct {
+	Millis int
+}
+
+func (t formFieldDebounce) formFieldOption() {}
+
+func buildFormFieldOptions(opts []formFieldOption) string {
+	builder := strings.Builder{}
+	builder.WriteByte('{')
+	for _, option := range opts {
+		switch option.(type) {
+		case formFieldDebounce:
+			fmt.Fprintf(&builder, `"debounce": "%dms",`, option.(formFieldDebounce).Millis)
+		}
+	}
+	builder.WriteByte('}')
+	return builder.String()
+
 }

@@ -14,17 +14,27 @@ async function validateForm(url, data) {
 
 
 document.addEventListener('alpine:init', () => {
-  Alpine.data('formField', (fieldName) => ({
+  Alpine.data('formField', (fieldName, opts = {}) => ({
     get valid() { return this.$data.validationErrors[fieldName] == undefined },
     get error() { return this.$data.validationErrors[fieldName] },
     get value() { return this.$data.fields[fieldName] },
     set value(newValue) { this.$data.fields[fieldName] = newValue },
+    input: {
+      [opts.debounce != undefined ? `@input.debounce.${opts.debounce}` : '@input.debounce']() {
+        this.$dispatch('validate')
+      },
+      [':id']: "fieldId",
+      ['x-model']: "value",
+      ['name']: fieldName,
+      [':aria-invalid']: "!valid",
+      [':aria-errormessage']: "errorId",
+    },
     errorId: "",
     fieldId: "",
     init() {
       this.errorId = this.$id('error')
       this.fieldId = this.$id('field')
-      console.log('test', this.$data)
+      console.log('test', opts, this)
     },
   }))
 })

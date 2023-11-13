@@ -40,7 +40,7 @@ func TextFormField[T any](form FormConfig[T], config *TextFormFieldConfig[T], va
 				templ_7745c5c3_Buffer = templ.GetBuffer()
 				defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<input :id=\"fieldId\" x-model=\"value\"")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<input x-bind=\"input\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -75,15 +75,7 @@ func TextFormField[T any](form FormConfig[T], config *TextFormFieldConfig[T], va
 					return templ_7745c5c3_Err
 				}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" name=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(config.FieldName))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" :aria-invalid=\"!valid\" :aria-errormessage=\"errorId\" class=\"block mb-2 w-full p-4 border rounded-lg sm:text-md\" :class=\"")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" class=\"block mb-2 w-full p-4 border rounded-lg sm:text-md\" :class=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

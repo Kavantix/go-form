@@ -12,15 +12,10 @@ type SelectFormFieldConfig[T any] struct {
 }
 
 templ SelectFormField[T any](config (*SelectFormFieldConfig[T]), value string) {
-	@formField(config) {
+	@formField(config, formFieldDebounce{Millis: 20}) {
 		<select
- 			:id="fieldId"
+ 			x-bind="input"
  			required?={ config.Required }
- 			x-model="value"
- 			@input.debounce.50ms={ "$dispatch('validate')" }
- 			name={ config.FieldName }
- 			:aria-invalid="!valid"
- 			:aria-errormessage="errorId"
  			class="cursor-pointer block mb-2 w-full p-4 sm:text-md rounded-lg"
  			:class={ `
       valid
