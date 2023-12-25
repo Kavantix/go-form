@@ -144,5 +144,8 @@ func (f *SelectFormFieldConfig[T]) Label() string {
 }
 
 func (f *SelectFormFieldConfig[T]) Value(row *T) string {
+	if row == nil {
+		return ""
+	}
 	return f.FieldValue(row)
 }

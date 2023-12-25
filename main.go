@@ -26,7 +26,7 @@ func RegisterResource[T any](e *gin.RouterGroup, resource resources.Resource[T])
 	r.GET("/:id", HandleResourceView(resource))
 	r.GET("/:id/validate", HandleValidateResource(resource))
 	r.GET("/create", HandleResourceCreate(resource))
-	r.GET("/create/validate", HandleValidateResource(resource))
+	r.GET("/validate", HandleValidateResource(resource))
 	r.POST("", HandleCreateResource(resource))
 	r.POST("/:id", HandleUpdateResource(resource))
 }

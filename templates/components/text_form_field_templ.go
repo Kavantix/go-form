@@ -171,5 +171,8 @@ func (f *TextFormFieldConfig[T]) Label() string {
 }
 
 func (f *TextFormFieldConfig[T]) Value(row *T) string {
+	if row == nil {
+		return ""
+	}
 	return f.FieldValue(row)
 }
