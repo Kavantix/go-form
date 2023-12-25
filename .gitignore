@@ -1,3 +1,5 @@
 storage
 .DS_Store
 .env
+keys
+!cmd/keys
