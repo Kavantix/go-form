@@ -2,16 +2,15 @@ package templates
 
 import . "github.com/Kavantix/go-form/templates/components"
 
-templ Layout(currentTab string) {
-	<html>
-		<head>
-			<title>Go Form Example</title>
-			<script src="https://unpkg.com/htmx.org@1.9.6" integrity="sha384-FhXw7b6AlE/jyjlZH5iHa/tTe9EpJ1Y55RjcgPbjeWMskSxZt1v9qkxLJWNJaGni" crossorigin="anonymous"></script>
-			<script src="https://unpkg.com/alpinejs" defer></script>
-			<script src="https://cdn.tailwindcss.com"></script>
-			<script src="/js/app.js"></script>
-			<link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.0.0/flowbite.min.css" rel="stylesheet"/>
-			<style>
+templ Head() {
+	<head>
+		<title>Go Form Example</title>
+		<script src="https://unpkg.com/htmx.org@1.9.6" integrity="sha384-FhXw7b6AlE/jyjlZH5iHa/tTe9EpJ1Y55RjcgPbjeWMskSxZt1v9qkxLJWNJaGni" crossorigin="anonymous"></script>
+		<script src="https://unpkg.com/alpinejs" defer></script>
+		<script src="https://cdn.tailwindcss.com"></script>
+		<script src="/js/app.js"></script>
+		<link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.0.0/flowbite.min.css" rel="stylesheet"/>
+		<style>
   
 thead tr th:first-child { border-top-left-radius: 10px; border-bottom-left-radius: 10px;}
 thead tr th:last-child { border-top-right-radius: 10px; border-bottom-right-radius: 10px;}
@@ -21,7 +20,12 @@ tbody tr td:last-child { border-top-right-radius: 5px; border-bottom-right-radiu
 
 
 </style>
-		</head>
+	</head>
+}
+
+templ Layout(currentTab string) {
+	<html>
+		@Head()
 		<body hx-boost="true">
 			<div class="text-sm font-medium text-center text-gray-500 border-b border-gray-200 dark:text-gray-400 dark:border-gray-700">
 				<ul class="flex flex-wrap -mb-px">

@@ -6,9 +6,10 @@ import (
 	"flag"
 	"fmt"
 	"io/fs"
+	"net/url"
 	"os"
 
-	"github.com/Kavantix/go-form/sign"
+	"github.com/Kavantix/go-form/auth"
 	"github.com/rsc/getopt"
 )
 
@@ -43,6 +44,8 @@ func failWithUsage() {
 	eprintln("Sub commands:")
 	eprintln("    generate")
 	eprintln("        Generates a new key")
+	eprintln("    loginlink")
+	eprintln("        Generates login link")
 	eprintln("Flags:")
 	getopt.PrintDefaults()
 	os.Exit(1)
@@ -67,23 +70,25 @@ func main() {
 	switch subcommand {
 	case "generate":
 		generateKey()
-	case "jwt":
+	case "loginlink":
 		privPath, pubPath := paths()
-		err := sign.LoadKeys(privPath, pubPath)
+		err := auth.LoadKeys(privPath, pubPath)
 		if err != nil {
 			efatalf("Failed to load keys: %s\n", err.Error())
 		}
-		result, err := sign.CreateJwt(&sign.JwtOptions{
-			Subject: "userid",
+		result, err := auth.CreateJwt(&auth.JwtOptions{
+			Audience: "loginlink",
+			Subject:  "2",
 		})
 		if err != nil {
 			efatalf("Failed to create jwt: %s\n", err)
 		}
-		_, err = sign.ParseJwt(result)
+		c, err := auth.ParseJwt(result)
 		if err != nil {
 			efatalf("Failed to validate jwt: %s\n", err.Error())
 		}
-		fmt.Println(result)
+		eprintf("Claims:\n%+v\n", c)
+		fmt.Printf("http://go-form.test/loginlink?token=%s", url.QueryEscape(result))
 
 	default:
 		eprintln("Missing subcommand")
@@ -123,7 +128,7 @@ func generateKey() {
 			os.Exit(1)
 		}
 	}
-	os.WriteFile(privPath, sign.Base64Encode(privateKey), 0700)
-	os.WriteFile(pubPath, sign.Base64Encode(publicKey), 0700)
+	os.WriteFile(privPath, auth.Base64Encode(privateKey), 0700)
+	os.WriteFile(pubPath, auth.Base64Encode(publicKey), 0700)
 
 }

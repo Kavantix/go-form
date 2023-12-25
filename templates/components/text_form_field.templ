@@ -11,25 +11,33 @@ type TextFormFieldConfig[T any] struct {
 	FieldValue  func(row *T) string
 }
 
-templ TextFormField[T any](form (FormConfig[T]), config (*TextFormFieldConfig[T]), value *T) {
-	@formField(config) {
-		<input
- 			x-bind="input"
- 			required?={ config.Required }
- 			aria-required?={ config.Required }
- 			if config.Type == "" {
-				type="text"
-			} else {
-				type={ config.Type }
-			}
- 			class="block mb-2 w-full p-4 border rounded-lg sm:text-md"
- 			:class={ `
+templ TextField(required bool, fieldType, placeholder string) {
+	<input
+ 		x-bind="input"
+ 		required?={ required }
+ 		aria-required?={ required }
+ 		if fieldType == "" {
+			type="text"
+		} else {
+			type={ fieldType }
+		}
+ 		class="block mb-2 w-full p-4 border rounded-lg sm:text-md"
+ 		:class={ `
         valid
         ? "bg-gray-50 border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500"
         : "bg-red-50 border-red-500 text-red-900 placeholder-red-700 focus:ring-red-500 focus:border-red-500"
       ` }
- 			placeholder={ config.Placeholder }
-		/>
+ 		placeholder={ placeholder }
+	/>
+}
+
+templ TextFormField[T any](form (FormConfig[T]), config (*TextFormFieldConfig[T]), value *T) {
+	@formField(config) {
+		@TextField(
+		config.Required,
+		config.Type,
+		config.Placeholder,
+		)
 	}
 }
 

@@ -1,0 +1,17 @@
+package templates
+
+import "github.com/Kavantix/go-form/templates/components"
+
+templ Login() {
+	<html>
+		@Head()
+		<body>
+			<form style="position: flex; justify-content: center; aligh-items: center; height: 100%; width: 100%;">
+				<div>
+					<label for="email">Email</label>
+					@components.TextField(true, "email", "Email")
+				</div>
+			</form>
+		</body>
+	</html>
+}

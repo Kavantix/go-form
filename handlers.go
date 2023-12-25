@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/Kavantix/go-form/auth"
 	"github.com/Kavantix/go-form/database"
 	"github.com/Kavantix/go-form/interfaces"
 	"github.com/Kavantix/go-form/resources"
@@ -12,6 +14,67 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
+
+func HandleLogin() func(c *gin.Context) {
+	return func(c *gin.Context) {
+		template(c, 200, templates.Login())
+	}
+}
+
+func HandleLoginLink(isProduction bool) func(c *gin.Context) {
+	return func(c *gin.Context) {
+		tokenString := c.Query("token")
+		if tokenString == "" {
+			c.AbortWithError(400, fmt.Errorf("No token provided for login"))
+			return
+		}
+		fmt.Printf("token: %+v\n", tokenString)
+		claims, err := auth.ParseJwt(tokenString)
+		if err != nil {
+			fmt.Printf("Claims: %+v\n", claims)
+			c.AbortWithError(401, fmt.Errorf("Invalid token: %w", err))
+			return
+		}
+		if claims["aud"] != "loginlink" || claims["sub"] == nil {
+			c.AbortWithError(401, fmt.Errorf("Invalid token missing claims"))
+			return
+		}
+		rawUserId, ok := claims["sub"].(string)
+		if !ok {
+			c.AbortWithError(401, fmt.Errorf("No user id in claims"))
+			return
+		}
+		userId, err := strconv.Atoi(rawUserId)
+		if err != nil {
+			c.AbortWithError(401, fmt.Errorf("No valid user id in claims: %w", err))
+			return
+		}
+		user, err := database.GetUser(userId)
+		if err != nil {
+			c.AbortWithError(401, fmt.Errorf("No valid user id in claims: %w", err))
+			return
+		}
+
+		authToken, err := auth.CreateJwt(&auth.JwtOptions{
+			Subject:  rawUserId,
+			Audience: "go-form",
+			ValidFor: time.Hour,
+		})
+
+		c.SetCookie(
+			"goform_auth",
+			authToken,
+			3600,
+			"",
+			"",
+			isProduction,
+			true,
+		)
+		c.JSON(200, gin.H{
+			"User": user,
+		})
+	}
+}
 
 func HandleGetUploadUrl(disk interfaces.DirectUploadDisk) func(c *gin.Context) {
 	return func(c *gin.Context) {

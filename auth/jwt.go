@@ -1,4 +1,4 @@
-package sign
+package auth
 
 import (
 	"fmt"
@@ -21,23 +21,41 @@ func keyFunc(t *jwt.Token) (any, error) {
 	return publicKey, nil
 }
 
-func ParseJwt(tokenString string) (*jwt.Token, error) {
-	return jwtParser.Parse(tokenString, keyFunc)
+func ParseJwt(tokenString string) (jwt.MapClaims, error) {
+	claims := jwt.MapClaims{}
+	_, err := jwtParser.ParseWithClaims(tokenString, claims, keyFunc)
+	if err != nil {
+		return nil, err
+	}
+	return claims, nil
 }
 
 type JwtOptions struct {
-	Subject string
+	Audience    string
+	Subject     string
+	ValidFor    time.Duration
+	ExtraClaims map[string]string
 }
 
 func (o *JwtOptions) claims() jwt.MapClaims {
 	claims := jwt.MapClaims{
 		"iss": "go-form",
 		"iat": time.Now().Unix(),
-		"exp": time.Now().Add(time.Minute * 10).Unix(),
 	}
 
+	if o.Audience != "" {
+		claims["aud"] = o.Audience
+	}
 	if o.Subject != "" {
 		claims["sub"] = o.Subject
+	}
+	if o.ExtraClaims != nil {
+		claims["extra"] = o.ExtraClaims
+	}
+	if o.ValidFor > 0 {
+		claims["exp"] = time.Now().Add(o.ValidFor).Unix()
+	} else {
+		claims["exp"] = time.Now().Add(time.Minute * 5).Unix()
 	}
 
 	return claims

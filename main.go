@@ -6,8 +6,10 @@ import (
 	"io/fs"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 
+	"github.com/Kavantix/go-form/auth"
 	"github.com/Kavantix/go-form/database"
 	"github.com/Kavantix/go-form/disks"
 	"github.com/Kavantix/go-form/interfaces"
@@ -18,7 +20,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
-func RegisterResource[T any](e *gin.Engine, resource resources.Resource[T]) {
+func RegisterResource[T any](e *gin.RouterGroup, resource resources.Resource[T]) {
 	r := e.Group(resource.Location(nil))
 	r.GET("", HandleResourceIndex(resource))
 	r.GET("/:id", HandleResourceView(resource))
@@ -51,6 +53,11 @@ func main() {
 	err := godotenv.Load()
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		log.Fatalf("Error loading .env file:\n%s\n", err)
+	}
+
+	err = auth.LoadKeys(MustLookupEnv("PRIVATE_KEY"), MustLookupEnv("PUBLIC_KEY"))
+	if err != nil {
+		log.Fatalf("Failed ot load keys:\n%s\n", err)
 	}
 
 	var disk interfaces.Disk
@@ -98,8 +105,83 @@ func main() {
 	if disk, ok := disk.(interfaces.DirectUploadDisk); ok {
 		r.GET("/upload-url", HandleGetUploadUrl(disk))
 	}
-	RegisterResource(r, resources.UserResource{})
-	RegisterResource(r, resources.AssignmentResource{})
+	r.GET("/loginlink", HandleLoginLink(false))
+	r.Use(func(c *gin.Context) {
+		fmt.Println("--------------------- test 1 ")
+		c.Next()
+		fmt.Println("--------------------- test 2")
+		if c.GetBool("Unauthenticated") {
+			c.Redirect(302, "/login")
+		}
+	})
+	authenticated := r.Group("", func(c *gin.Context) {
+		authToken, err := c.Cookie("goform_auth")
+		if err != nil {
+			c.Set("Unauthenticated", true)
+			c.Abort()
+			return
+		}
+		claims, err := auth.ParseJwt(authToken)
+		if err != nil {
+			c.Set("Unauthenticated", true)
+			c.Abort()
+			return
+		}
+		if claims["aud"] != "go-form" {
+			c.Error(fmt.Errorf("Invalid audience"))
+			c.Set("Unauthenticated", true)
+			c.Abort()
+			return
+		}
+		userId, err := strconv.Atoi(claims["sub"].(string))
+		if err != nil {
+			c.Error(fmt.Errorf("Invalid user id"))
+			c.Set("Unauthenticated", true)
+			c.Abort()
+			return
+		}
+		var user *database.UserRow
+		c.Set("GetUser", func() (*database.UserRow, error) {
+			if user == nil {
+				user, err = database.GetUser(userId)
+				if err != nil {
+					return nil, err
+				}
+			}
+			return user, err
+		})
+		c.Next()
+	})
+	getUser := func(c *gin.Context) (*database.UserRow, error) {
+		user, err := c.MustGet("GetUser").(func() (*database.UserRow, error))()
+		if err != nil {
+			c.AbortWithError(500, err)
+			return nil, err
+		}
+		return user, nil
+	}
+	authenticated.GET("/users/me", func(c *gin.Context) {
+		user, err := getUser(c)
+		if err != nil {
+			return
+		}
+		c.IndentedJSON(200, user)
+	})
+	authenticated.GET("/logout", func(c *gin.Context) {
+		c.SetCookie(
+			"goform_auth",
+			"",
+			-1,
+			"",
+			"",
+			false,
+			true,
+		)
+		c.Set("Unauthenticated", true)
+	})
+	RegisterResource(authenticated, resources.UserResource{})
+	RegisterResource(authenticated, resources.AssignmentResource{})
+	r.GET("/login", HandleLogin())
 
 	r.GET("/", func(c *gin.Context) {
 		c.Redirect(302, "/users")

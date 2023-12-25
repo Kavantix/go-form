@@ -1,4 +1,4 @@
-package sign
+package auth
 
 import (
 	"crypto/ed25519"
