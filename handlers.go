@@ -13,6 +13,35 @@ import (
 	"github.com/google/uuid"
 )
 
+func HandleGetUploadUrl(disk interfaces.DirectUploadDisk) func(c *gin.Context) {
+	return func(c *gin.Context) {
+		var id uuid.UUID
+		var location string
+		for {
+			id = uuid.New()
+			location = fmt.Sprintf("tmp/%s", id.String())
+			exists, err := disk.Exists(location)
+			if err != nil {
+				c.AbortWithError(500, fmt.Errorf("Failed to check if location exists: %w", err))
+				return
+			}
+			if !exists {
+				break
+			}
+		}
+
+		url, err := disk.PutUrl(location)
+		if err != nil {
+			c.AbortWithError(500, fmt.Errorf("Failed to create put url: %w", err))
+			return
+		}
+		c.JSON(200, gin.H{
+			"id":  id.String(),
+			"url": url,
+		})
+	}
+}
+
 func HandleUploadFile(disk interfaces.Disk) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		form, err := c.MultipartForm()

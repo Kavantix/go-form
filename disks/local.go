@@ -76,6 +76,21 @@ func (l *Local) Put(location string, content io.Reader) error {
 	return nil
 }
 
+func (l *Local) Exists(location string) (bool, error) {
+	path, err := l.PathTo(location)
+	if err != nil {
+		return false, fmt.Errorf("Failed to check if location '%s' exists: %w", location, err)
+	}
+	_, err = os.Stat(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return false, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("Failed to check if location '%s' exists: %w", location, err)
+	}
+	return true, nil
+}
+
 func (l *Local) Get(location string) (io.Reader, error) {
 	panic("not implemented") // TODO: Implement
 }

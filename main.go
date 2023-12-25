@@ -76,6 +76,7 @@ func main() {
 			MustLookupEnv("S3_BUCKET"),
 			MustLookupEnv("S3_KEY_ID"),
 			MustLookupEnv("S3_KEY_SECRET"),
+			false,
 		)
 		if err != nil {
 			log.Fatal(fmt.Errorf("Failed to create s3 disk: %w", err))
@@ -94,6 +95,9 @@ func main() {
 	r.Static("/storage", "./storage/public/")
 	r.Static("/js", "./public/js/")
 	r.POST("/upload", HandleUploadFile(disk))
+	if disk, ok := disk.(interfaces.DirectUploadDisk); ok {
+		r.GET("/upload-url", HandleGetUploadUrl(disk))
+	}
 	RegisterResource(r, resources.UserResource{})
 	RegisterResource(r, resources.AssignmentResource{})
 
