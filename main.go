@@ -105,15 +105,13 @@ func main() {
 	if disk, ok := disk.(interfaces.DirectUploadDisk); ok {
 		r.GET("/upload-url", HandleGetUploadUrl(disk))
 	}
-	r.GET("/loginlink", HandleLoginLink(false))
 	r.Use(func(c *gin.Context) {
-		fmt.Println("--------------------- test 1 ")
 		c.Next()
-		fmt.Println("--------------------- test 2")
 		if c.GetBool("Unauthenticated") {
 			c.Redirect(302, "/login")
 		}
 	})
+	r.GET("/loginlink", HandleLoginLink(false))
 	authenticated := r.Group("", func(c *gin.Context) {
 		authToken, err := c.Cookie("goform_auth")
 		if err != nil {
@@ -182,6 +180,7 @@ func main() {
 	RegisterResource(authenticated, resources.UserResource{})
 	RegisterResource(authenticated, resources.AssignmentResource{})
 	r.GET("/login", HandleLogin())
+	r.POST("/login", HandlePostLogin())
 
 	r.GET("/", func(c *gin.Context) {
 		c.Redirect(302, "/users")

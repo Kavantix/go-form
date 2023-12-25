@@ -21,7 +21,7 @@ type TextFormFieldConfig[T any] struct {
 	FieldValue  func(row *T) string
 }
 
-func TextField(required bool, fieldType, placeholder string) templ.Component {
+func TextField(required bool, fieldType, name, placeholder string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
 		if !templ_7745c5c3_IsBuffer {
@@ -61,6 +61,20 @@ func TextField(required bool, fieldType, placeholder string) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(fieldType))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		if name != "" {
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" name=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(name))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -122,6 +136,7 @@ func TextFormField[T any](form FormConfig[T], config *TextFormFieldConfig[T], va
 			templ_7745c5c3_Err = TextField(
 				config.Required,
 				config.Type,
+				"",
 				config.Placeholder,
 			).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {

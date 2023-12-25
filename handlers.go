@@ -1,7 +1,9 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -20,38 +22,82 @@ func HandleLogin() func(c *gin.Context) {
 		template(c, 200, templates.Login())
 	}
 }
+func HandlePostLogin() func(c *gin.Context) {
+	return func(c *gin.Context) {
+		email := c.PostForm("email")
+		if email == "" {
+			c.AbortWithError(400, fmt.Errorf("email param missing"))
+			return
+		}
+		user, err := database.GetUserByEmail(email)
+		if errors.Is(err, database.ErrNotFound) {
+			c.Error(fmt.Errorf("email %s not found", email))
+			template(c, 200, templates.LoginMessage())
+			return
+		} else if err != nil {
+			c.AbortWithError(500, fmt.Errorf("Failed to check if user exists: %w", err))
+			return
+		}
+		token, err := auth.CreateJwt(&auth.JwtOptions{
+			Audience: "loginlink",
+			Subject:  strconv.Itoa(int(user.Id)),
+			ValidFor: time.Minute * 5,
+		})
+		if err != nil {
+			c.AbortWithError(500, fmt.Errorf("Failed to create token: %w", err))
+
+			return
+		}
+		fmt.Printf("\nToken link for %s:\nhttp://localhost/loginlink?token=%s\n\n",
+			email,
+			url.QueryEscape(token),
+		)
+		template(c, 200, templates.LoginMessage())
+	}
+}
 
 func HandleLoginLink(isProduction bool) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		tokenString := c.Query("token")
 		if tokenString == "" {
-			c.AbortWithError(400, fmt.Errorf("No token provided for login"))
+			c.Error(fmt.Errorf("No token provided for login"))
+			c.Abort()
+			c.Set("Unauthenticated", true)
 			return
 		}
-		fmt.Printf("token: %+v\n", tokenString)
 		claims, err := auth.ParseJwt(tokenString)
 		if err != nil {
-			fmt.Printf("Claims: %+v\n", claims)
-			c.AbortWithError(401, fmt.Errorf("Invalid token: %w", err))
+			// TODO: show error to user
+			c.Error(fmt.Errorf("Invalid token: %w", err))
+			c.Abort()
+			c.Set("Unauthenticated", true)
 			return
 		}
 		if claims["aud"] != "loginlink" || claims["sub"] == nil {
-			c.AbortWithError(401, fmt.Errorf("Invalid token missing claims"))
+			c.Error(fmt.Errorf("Invalid token missing claims"))
+			c.Abort()
+			c.Set("Unauthenticated", true)
 			return
 		}
 		rawUserId, ok := claims["sub"].(string)
 		if !ok {
-			c.AbortWithError(401, fmt.Errorf("No user id in claims"))
+			c.Error(fmt.Errorf("No user id in claims"))
+			c.Abort()
+			c.Set("Unauthenticated", true)
 			return
 		}
 		userId, err := strconv.Atoi(rawUserId)
 		if err != nil {
-			c.AbortWithError(401, fmt.Errorf("No valid user id in claims: %w", err))
+			c.Error(fmt.Errorf("No valid user id in claims: %w", err))
+			c.Abort()
+			c.Set("Unauthenticated", true)
 			return
 		}
-		user, err := database.GetUser(userId)
+		_, err = database.GetUser(userId)
 		if err != nil {
-			c.AbortWithError(401, fmt.Errorf("No valid user id in claims: %w", err))
+			c.Error(fmt.Errorf("No valid user id in claims: %w", err))
+			c.Abort()
+			c.Set("Unauthenticated", true)
 			return
 		}
 
@@ -70,9 +116,7 @@ func HandleLoginLink(isProduction bool) func(c *gin.Context) {
 			isProduction,
 			true,
 		)
-		c.JSON(200, gin.H{
-			"User": user,
-		})
+		c.Redirect(302, "/users")
 	}
 }
 

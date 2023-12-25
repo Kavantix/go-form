@@ -26,6 +26,19 @@ func GetUser(id int) (*UserRow, error) {
 	return &users[0], nil
 }
 
+func GetUserByEmail(email string) (*UserRow, error) {
+	users := []UserRow{}
+	err := db.Select(&users, "select id, name, email, date_of_birth from users where email = $1", email)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch user by email: %w", err)
+	}
+	if len(users) != 1 {
+		return nil, ErrNotFound
+	}
+
+	return &users[0], nil
+}
+
 func GetUsers(page, pageSize int) ([]UserRow, error) {
 	users := []UserRow{}
 	err := db.Select(&users,

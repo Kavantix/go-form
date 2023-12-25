@@ -35,6 +35,9 @@ templ Layout(currentTab string) {
 					@Tab("/assignments", currentTab == "/assignments") {
 						Assignments 
 					}
+					@Tab("/logout", false) {
+						Logout
+					}
 				</ul>
 			</div>
 			{ children... }

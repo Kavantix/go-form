@@ -5,13 +5,28 @@ import "github.com/Kavantix/go-form/templates/components"
 templ Login() {
 	<html>
 		@Head()
-		<body>
-			<form style="position: flex; justify-content: center; aligh-items: center; height: 100%; width: 100%;">
+		<body hx-boost="true" style="position: flex; justify-content: center; aligh-items: center; height: 100%; width: 100%;">
+			<form method="POST">
 				<div>
 					<label for="email">Email</label>
-					@components.TextField(true, "email", "Email")
+					@components.TextField(true, "email", "email", "Email")
 				</div>
+				@components.Button("") {
+					Request login link
+				}
 			</form>
 		</body>
 	</html>
+}
+
+templ LoginMessage() {
+	<body hx-boost="true">
+		<h1>Link sent</h1>
+		<p>
+			If the email is known a login link will be generated.
+		</p>
+		<p>
+			Check server log for generated link.
+		</p>
+	</body>
 }
