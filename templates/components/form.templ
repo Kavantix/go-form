@@ -1,6 +1,5 @@
 package components
 
-import "strings"
 import "fmt"
 import "encoding/json"
 import "log"
@@ -12,7 +11,9 @@ type Resource[T any] interface {
 }
 
 templ Form[T any](resource (Resource[T]), value *T, validationErrors map[string]string) {
-	@form(resource.FormConfig(), value, validationErrors)
+	@form(resource.FormConfig(), value, validationErrors) {
+		{ children... }
+	}
 }
 
 func buildData[T any](config FormConfig[T], row *T, validationErrors map[string]string) string {
@@ -43,8 +44,6 @@ templ form[T any](config (FormConfig[T]), row *T, validationErrors map[string]st
 			@field.RenderFormField(config, row)
 		}
 		<br/>
-		@Button("") {
-			Save
-		}
+		{ children... }
 	</form>
 }

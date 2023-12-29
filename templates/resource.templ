@@ -14,13 +14,27 @@ templ ResourceOverview[T any](resource resources.Resource[T], rows []T) {
 
 templ ResourceView[T any](resource resources.Resource[T], row *T, validationErrors map[string]string) {
 	@Layout(resource.Location(nil)) {
-		@components.Form(resource, row, validationErrors)
+		@components.Form(resource, row, validationErrors) {
+			@components.Button(resource.Location(nil)) {
+				Cancel
+			}
+			@components.Button("") {
+				Save
+			}
+		}
 	}
 }
 
 templ ResourceCreate[T any](resource resources.Resource[T], row *T, validationErrors map[string]string) {
 	@Layout(resource.Location(nil)) {
 		<h1>Create new { resource.Title() }</h1>
-		@components.Form(resource, row, validationErrors)
+		@components.Form(resource, row, validationErrors) {
+			@components.Button(resource.Location(nil)) {
+				Cancel
+			}
+			@components.Button("") {
+				Save
+			}
+		}
 	}
 }

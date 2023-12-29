@@ -10,8 +10,9 @@ import "context"
 import "io"
 import "bytes"
 
-import "strings"
 import "fmt"
+import "encoding/json"
+import "log"
 
 import . "github.com/Kavantix/go-form/interfaces"
 
@@ -32,7 +33,22 @@ func Form[T any](resource Resource[T], value *T, validationErrors map[string]str
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = form(resource.FormConfig(), value, validationErrors).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Var2 := templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
+			templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
+			if !templ_7745c5c3_IsBuffer {
+				templ_7745c5c3_Buffer = templ.GetBuffer()
+				defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
+			}
+			templ_7745c5c3_Err = templ_7745c5c3_Var1.Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if !templ_7745c5c3_IsBuffer {
+				_, templ_7745c5c3_Err = io.Copy(templ_7745c5c3_W, templ_7745c5c3_Buffer)
+			}
+			return templ_7745c5c3_Err
+		})
+		templ_7745c5c3_Err = form(resource.FormConfig(), value, validationErrors).Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -44,34 +60,19 @@ func Form[T any](resource Resource[T], value *T, validationErrors map[string]str
 }
 
 func buildData[T any](config FormConfig[T], row *T, validationErrors map[string]string) string {
-	builder := strings.Builder{}
-	builder.WriteString("{ validationErrors: {")
-	i := 0
-	for name, error := range validationErrors {
-		builder.WriteByte('"')
-		builder.WriteString(name)
-		builder.WriteString(`": "`)
-		builder.WriteString(error)
-		builder.WriteByte('"')
-		if i != len(validationErrors)-1 {
-			builder.WriteByte(',')
-		}
-		i += 1
+	fields := map[string]string{}
+	for _, field := range config.Fields {
+		fields[field.Name()] = field.Value(row)
 	}
-	builder.WriteString("}, fields: {")
-	fields := config.Fields
-	for i, field := range fields {
-		builder.WriteByte('"')
-		builder.WriteString(field.Name())
-		builder.WriteString(`": "`)
-		builder.WriteString(field.Value(row))
-		builder.WriteByte('"')
-		if i != len(fields)-1 {
-			builder.WriteByte(',')
-		}
+	data := map[string]any{
+		"validationErrors": validationErrors,
+		"fields":           fields,
 	}
-	builder.WriteString("} }")
-	return builder.String()
+	result, err := json.Marshal(data)
+	if err != nil {
+		log.Panicf("json Marshal of fields failed: %s", err)
+	}
+	return string(result)
 }
 
 func form[T any](config FormConfig[T], row *T, validationErrors map[string]string) templ.Component {
@@ -82,9 +83,9 @@ func form[T any](config FormConfig[T], row *T, validationErrors map[string]strin
 			defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var2 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var2 == nil {
-			templ_7745c5c3_Var2 = templ.NopComponent
+		templ_7745c5c3_Var3 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var3 == nil {
+			templ_7745c5c3_Var3 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<form x-data=\"")
@@ -107,8 +108,8 @@ func form[T any](config FormConfig[T], row *T, validationErrors map[string]strin
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var3 templ.SafeURL = templ.URL(config.SaveUrl(row))
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(string(templ_7745c5c3_Var3)))
+		var templ_7745c5c3_Var4 templ.SafeURL = templ.URL(config.SaveUrl(row))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(string(templ_7745c5c3_Var4)))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -126,23 +127,7 @@ func form[T any](config FormConfig[T], row *T, validationErrors map[string]strin
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Var4 := templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
-			templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
-			if !templ_7745c5c3_IsBuffer {
-				templ_7745c5c3_Buffer = templ.GetBuffer()
-				defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
-			}
-			templ_7745c5c3_Var5 := `Save`
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var5)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			if !templ_7745c5c3_IsBuffer {
-				_, templ_7745c5c3_Err = io.Copy(templ_7745c5c3_W, templ_7745c5c3_Buffer)
-			}
-			return templ_7745c5c3_Err
-		})
-		templ_7745c5c3_Err = Button("").Render(templ.WithChildren(ctx, templ_7745c5c3_Var4), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = templ_7745c5c3_Var3.Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
