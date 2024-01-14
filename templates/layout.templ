@@ -24,23 +24,16 @@ tbody tr td:last-child { border-top-right-radius: 5px; border-bottom-right-radiu
 }
 
 templ Layout(currentTab string) {
-	<html>
-		@Head()
-		<body hx-boost="true">
-			<div class="text-sm font-medium text-center text-gray-500 border-b border-gray-200 dark:text-gray-400 dark:border-gray-700">
-				<ul class="flex flex-wrap -mb-px">
-					@Tab("/users", currentTab == "/users") {
-						Users 
-					}
-					@Tab("/assignments", currentTab == "/assignments") {
-						Assignments 
-					}
-					@Tab("/logout", false) {
-						Logout
-					}
-				</ul>
-			</div>
+	if (IsHtmx(ctx)) {
+		@body(currentTab) {
 			{ children... }
+		}
+	} else {
+		<html>
+			@Head()
+			@body(currentTab) {
+				{ children... }
+			}
 			<script>
         document.body.addEventListener('htmx:beforeSwap', function(evt) {
             if(evt.detail.xhr.status === 422){
@@ -55,6 +48,25 @@ templ Layout(currentTab string) {
           });
 
     </script>
-		</body>
-	</html>
+		</html>
+	}
+}
+
+templ body(currentTab string) {
+	<body hx-boost="true">
+		<div class="text-sm font-medium text-center text-gray-500 border-b border-gray-200 dark:text-gray-400 dark:border-gray-700">
+			<ul class="flex flex-wrap -mb-px">
+				@Tab("/users", currentTab == "/users") {
+					Users 
+				}
+				@Tab("/assignments", currentTab == "/assignments") {
+					Assignments 
+				}
+				@Tab("/logout", false) {
+					Logout
+				}
+			</ul>
+		</div>
+		{ children... }
+	</body>
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -101,6 +102,11 @@ func main() {
 	r := gin.Default()
 	r.Static("/storage", "./storage/public/")
 	r.Static("/js", "./public/js/")
+	r.Use(func(c *gin.Context) {
+		ctx := context.WithValue(c.Request.Context(), "isHtmx", c.GetHeader("HX-Request") == "true")
+		*c.Request = *c.Request.WithContext(ctx)
+		c.Next()
+	})
 	r.POST("/upload", HandleUploadFile(disk))
 	if disk, ok := disk.(interfaces.DirectUploadDisk); ok {
 		r.GET("/upload-url", HandleGetUploadUrl(disk))

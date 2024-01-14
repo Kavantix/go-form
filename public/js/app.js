@@ -15,8 +15,8 @@ async function validateForm(url, data) {
 
 document.addEventListener('alpine:init', () => {
   Alpine.data('formField', (fieldName, opts = {}) => ({
-    get valid() { return this.$data.validationErrors[fieldName] == undefined },
-    get error() { return this.$data.validationErrors[fieldName] },
+    get valid() { return this.$data.validationErrors?.[fieldName] == undefined },
+    get error() { return this.$data.validationErrors?.[fieldName] },
     get value() { return this.$data.fields[fieldName] },
     set value(newValue) { this.$data.fields[fieldName] = newValue },
     input: {
@@ -34,7 +34,6 @@ document.addEventListener('alpine:init', () => {
     init() {
       this.errorId = this.$id('error')
       this.fieldId = this.$id('field')
-      console.log('test', opts, this)
     },
   }))
 })
