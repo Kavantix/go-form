@@ -6,20 +6,22 @@ import . "github.com/Kavantix/go-form/interfaces"
 
 templ formField[T any](config FormField[T], opts ...formFieldOption) {
 	<div
- 		x-data={ fmt.Sprintf(`formField("%s", %s)`, config.Name(), buildFormFieldOptions(opts)) }
+		x-data={ fmt.Sprintf(`formField("%s", %s)`, config.Name(), buildFormFieldOptions(opts)) }
 	>
 		<label
- 			:for="fieldId"
+			:for="fieldId"
 		>
-			{ config.Label() }
+			<div class="label">
+				{ config.Label() }
+			</div>
 		</label>
 		{ children... }
 		<template x-if="!valid">
 			<p
- 				:id="errorId"
- 				aria-live="true"
- 				class="mt-2 text-sm text-red-600 dark:text-red-500"
- 				x-text="error"
+				:id="errorId"
+				aria-live="true"
+				class="mt-2 text-sm text-red-600 dark:text-red-500"
+				x-text="error"
 			></p>
 		</template>
 	</div>

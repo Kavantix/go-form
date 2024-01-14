@@ -9,16 +9,14 @@ var buttonClass = templ.SafeClass(`text-white bg-gray-800 hover:bg-gray-900
 templ Button(href string) {
 	if href != "" {
 		<a
- 			href={ templ.URL(href) }
- 			type="button"
- 			class={ buttonClass }
+			href={ templ.URL(href) }
+			class="btn btn-primary"
 		>
 			{ children... }
 		</a>
 	} else {
 		<button
- 			type="submit"
- 			class={ buttonClass }
+			class="btn btn-primary"
 		>
 			{ children... }
 		</button>

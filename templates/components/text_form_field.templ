@@ -13,24 +13,20 @@ type TextFormFieldConfig[T any] struct {
 
 templ TextField(required bool, fieldType, name, placeholder string) {
 	<input
- 		x-bind="input"
- 		required?={ required }
- 		aria-required?={ required }
- 		if fieldType == "" {
+		x-bind="input"
+		required?={ required }
+		aria-required?={ required }
+		if fieldType == "" {
 			type="text"
 		} else {
 			type={ fieldType }
 		}
- 		if name != "" {
+		if name != "" {
 			name={ name }
 		}
- 		class="block mb-2 w-full p-4 border rounded-lg sm:text-md"
- 		:class={ `
-        valid
-        ? "bg-gray-50 border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500"
-        : "bg-red-50 border-red-500 text-red-900 placeholder-red-700 focus:ring-red-500 focus:border-red-500"
-      ` }
- 		placeholder={ placeholder }
+		class="input input-bordered"
+		:class="valid ? '' : 'input-error'"
+		placeholder={ placeholder }
 	/>
 }
 

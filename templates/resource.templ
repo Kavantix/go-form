@@ -6,9 +6,11 @@ import "github.com/Kavantix/go-form/templates/components"
 templ ResourceOverview[T any](resource resources.Resource[T], rows []T) {
 	@Layout(resource.Location(nil)) {
 		@Table(resource, rows)
-		@components.Button(resource.Location(nil)+"/create") {
-			Add { resource.Title() }
-		}
+		<div class="mx-8">
+			@components.Button(resource.Location(nil)+"/create") {
+				Add { resource.Title() }
+			}
+		</div>
 	}
 }
 
@@ -27,7 +29,7 @@ templ ResourceView[T any](resource resources.Resource[T], row *T, validationErro
 
 templ ResourceCreate[T any](resource resources.Resource[T], row *T, validationErrors map[string]string) {
 	@Layout(resource.Location(nil)) {
-		<h1>Create new { resource.Title() }</h1>
+		<h1 class="text-xl mx-8 mt-8">Create new { resource.Title() }</h1>
 		@components.Form(resource, row, validationErrors) {
 			@components.Button(resource.Location(nil)) {
 				Cancel

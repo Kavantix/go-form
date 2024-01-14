@@ -34,11 +34,11 @@ func buildData[T any](config FormConfig[T], row *T, validationErrors map[string]
 
 templ form[T any](config (FormConfig[T]), row *T, validationErrors map[string]string) {
 	<form
- 		x-data={ buildData(config, row, validationErrors) }
- 		@validate={ fmt.Sprintf(`validateForm("%s/validate", $data)`, config.SaveUrl(row)) }
- 		class="mb-6 p-4"
- 		action={ templ.URL(config.SaveUrl(row)) }
- 		method="POST"
+		x-data={ buildData(config, row, validationErrors) }
+		@validate={ fmt.Sprintf(`validateForm("%s/validate", $data)`, config.SaveUrl(row)) }
+		class="mb-6 px-8 py-4"
+		action={ templ.URL(config.SaveUrl(row)) }
+		method="POST"
 	>
 		for _, field := range config.Fields {
 			@field.RenderFormField(config, row)

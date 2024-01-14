@@ -1,41 +1,36 @@
 package templates
 
-import "fmt"
-import "github.com/Kavantix/go-form/resources"
+import (
+	"fmt"
+	"github.com/Kavantix/go-form/resources"
+)
 
 templ Table[T any](resource resources.Resource[T], rows []T) {
 	@table(resource, resource.TableConfig(), rows)
 }
 
 templ table[T any](resource resources.Resource[T], columns [](resources.ColumnConfig[T]), rows []T) {
-	<div class="bg-white pb-4 px-4 rounded-md w-full">
+	<div class="pb-4 px-4 rounded-md w-full">
 		<div class="flex justify-between w-full pt-6 ">
-			<p class="ml-3">{ resource.Title() }</p>
-			<svg width="14" height="4" viewBox="0 0 14 4" fill="none" xmlns="http://www.w3.org/2000/svg">
-				<g opacity="0.4">
-					<circle cx="2.19796" cy="1.80139" r="1.38611" fill="#222222"></circle>
-					<circle cx="11.9013" cy="1.80115" r="1.38611" fill="#222222"></circle>
-					<circle cx="7.04991" cy="1.80115" r="1.38611" fill="#222222"></circle>
-				</g>
-			</svg>
+			<h1 class="mx-4 text-xl">{ resource.Title() }</h1>
 		</div>
 		<div class="w-full flex justify-start px-2 mt-2">
-			<div class="overflow-x-auto mt-6">
-				<table class="table-auto border-collapse w-full">
+			<div class="overflow-x-auto mt-6 w-full">
+				<table class="table table-lg w-full">
 					<thead>
-						<tr class="rounded-lg text-sm font-medium text-gray-700 text-left" style="font-size: 0.9674rem">
+						<tr style="font-size: 0.9674rem">
 							for _, column := range columns {
-								<th class="px-4 py-2 bg-gray-200 " style="background-color:#f8f8f8">{ column.Name }</th>
+								<th class="px-4 py-2 ">{ column.Name }</th>
 							}
 						</tr>
 					</thead>
-					<tbody class="text-sm font-normal text-gray-700">
+					<tbody>
 						for _, row := range rows {
 							<tr
- 								hx-get={ resource.Location(&row) }
- 								hx-target="body"
- 								hx-push-url="true"
- 								class="cursor-pointer hover:bg-gray-100 border-b border-gray-200 py-10"
+								hx-get={ resource.Location(&row) }
+								hx-target="body"
+								hx-push-url="true"
+								class="cursor-pointer hover"
 							>
 								for _, column := range columns {
 									<td class="px-4 py-4">{ fmt.Sprintf("%v", column.Value(&row)) }</td>
