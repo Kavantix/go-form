@@ -13,6 +13,11 @@ func template(c *gin.Context, code int, t templ.Component) {
 	t.Render(c.Request.Context(), c.Writer)
 }
 
+func htmxRedirect(c *gin.Context, location string) {
+	c.Header("HX-Location", location)
+	c.Status(204)
+}
+
 func paginationParams(c *gin.Context) (page, pageSize int, err error) {
 	page, err = strconv.Atoi(c.DefaultQuery("page", "0"))
 	if err != nil {

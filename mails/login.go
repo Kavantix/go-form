@@ -1,6 +1,8 @@
 package mails
 
 import (
+	"fmt"
+
 	"github.com/Kavantix/go-form/database"
 	"github.com/matcornic/hermes/v2"
 )
@@ -32,6 +34,28 @@ func Login(content LoginMailContent) *Email {
 				},
 				Outros: []string{
 					"Need help, or have questions? Just reply to this email, we'd love to help.",
+				},
+			},
+		}),
+	}
+}
+
+type ReloginMailContent struct {
+	User  *database.UserRow
+	Token string
+}
+
+func Relogin(content ReloginMailContent) *Email {
+	return &Email{
+		subject: fmt.Sprintf("Your go-form login token: %s", content.Token),
+		body: hermesBody(hermes.Email{
+			Body: hermes.Body{
+				Name: content.User.Name,
+				Actions: []hermes.Action{
+					{
+						Instructions: "Enter this token in the validation field:",
+						InviteCode:   content.Token,
+					},
 				},
 			},
 		}),

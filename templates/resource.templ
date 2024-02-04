@@ -7,7 +7,7 @@ templ ResourceOverview[T any](resource resources.Resource[T], rows []T) {
 	@Layout(resource.Location(nil)) {
 		@Table(resource, rows)
 		<div class="mx-8">
-			@components.Button(resource.Location(nil)+"/create") {
+			@components.Button(components.ButtonConfig{Href: resource.Location(nil)+"/create"}) {
 				Add { resource.Title() }
 			}
 		</div>
@@ -17,11 +17,11 @@ templ ResourceOverview[T any](resource resources.Resource[T], rows []T) {
 templ ResourceView[T any](resource resources.Resource[T], row *T, validationErrors map[string]string) {
 	@Layout(resource.Location(nil)) {
 		@components.Form(resource, row, validationErrors) {
-			@components.Button(resource.Location(nil)) {
-				Cancel
-			}
-			@components.Button("") {
+			@components.Button(components.ButtonConfig{}) {
 				Save
+			}
+			@components.Button(components.ButtonConfig{Href: resource.Location(nil), Type: components.ButtonSecondary}) {
+				Cancel
 			}
 		}
 	}
@@ -31,11 +31,11 @@ templ ResourceCreate[T any](resource resources.Resource[T], row *T, validationEr
 	@Layout(resource.Location(nil)) {
 		<h1 class="text-xl mx-8 mt-8">Create new { resource.Title() }</h1>
 		@components.Form(resource, row, validationErrors) {
-			@components.Button(resource.Location(nil)) {
-				Cancel
-			}
-			@components.Button("") {
+			@components.Button(components.ButtonConfig{}) {
 				Save
+			}
+			@components.Button(components.ButtonConfig{Href: resource.Location(nil),Type: components.ButtonSecondary}) {
+				Cancel
 			}
 		}
 	}

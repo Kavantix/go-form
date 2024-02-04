@@ -6,17 +6,38 @@ var buttonClass = templ.SafeClass(`text-white bg-gray-800 hover:bg-gray-900
   dark:bg-gray-800 dark:hover:bg-gray-700 dark:focus:ring-gray-700
   dark:border-gray-700`)
 
-templ Button(href string) {
-	if href != "" {
+type ButtonType int
+
+const (
+	ButtonPrimary   = ButtonType(0)
+	ButtonSecondary = ButtonType(1)
+)
+
+type ButtonConfig struct {
+	Href string
+	Type ButtonType
+}
+
+func (c ButtonConfig) typeClass() string {
+	switch c.Type {
+	case ButtonSecondary:
+		return "btn-neutral"
+	default:
+		return "btn-primary"
+	}
+}
+
+templ Button(config ButtonConfig) {
+	if config.Href != "" {
 		<a
-			href={ templ.URL(href) }
-			class="btn btn-primary"
+			href={ templ.URL(config.Href) }
+			class={ "btn", config.typeClass() }
 		>
 			{ children... }
 		</a>
 	} else {
 		<button
-			class="btn btn-primary"
+			class={ "btn", config.typeClass() }
 		>
 			{ children... }
 		</button>

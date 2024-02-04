@@ -7,7 +7,6 @@ import (
 	"io/fs"
 	"log"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/Kavantix/go-form/auth"
@@ -15,6 +14,7 @@ import (
 	"github.com/Kavantix/go-form/disks"
 	"github.com/Kavantix/go-form/interfaces"
 	"github.com/Kavantix/go-form/resources"
+	"github.com/Kavantix/go-form/templates"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 
@@ -51,6 +51,7 @@ func LookupEnv(key, fallback string) string {
 }
 
 func main() {
+	isProduction := false
 	err := godotenv.Load()
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		log.Fatalf("Error loading .env file:\n%s\n", err)
@@ -110,7 +111,9 @@ func main() {
 	r.Static("/storage", "./storage/public/")
 	r.Static("/js", "./public/js/")
 	r.Use(func(c *gin.Context) {
-		ctx := context.WithValue(c.Request.Context(), "isHtmx", c.GetHeader("HX-Request") == "true")
+		isHtmx := c.GetHeader("HX-Request") == "true"
+		ctx := context.WithValue(c.Request.Context(), "isHtmx", isHtmx)
+		c.Set("isHtmx", isHtmx)
 		*c.Request = *c.Request.WithContext(ctx)
 		c.Next()
 	})
@@ -121,32 +124,28 @@ func main() {
 	r.Use(func(c *gin.Context) {
 		c.Next()
 		if c.GetBool("Unauthenticated") {
-			c.Redirect(302, "/login")
+			if c.GetBool("isHtmx") {
+				if c.FullPath() == "/logout" {
+					htmxRedirect(c, "/login")
+					return
+				}
+				_, err := tryGetUserIdFromCookie(c, true)
+				if err != nil {
+					htmxRedirect(c, "/login")
+					return
+				}
+				c.Header("HX-Reswap", "innerHTML show:top")
+				c.Header("HX-Retarget", "#relogin")
+				template(c, 422, templates.SessionExpired())
+			} else {
+				c.Redirect(302, "/login")
+			}
 		}
 	})
-	r.GET("/loginlink", HandleLoginLink(false))
+	r.GET("/loginlink", HandleLoginLink(isProduction))
 	authenticated := r.Group("", func(c *gin.Context) {
-		authToken, err := c.Cookie("goform_auth")
+		userId, err := tryGetUserIdFromCookie(c, false)
 		if err != nil {
-			c.Set("Unauthenticated", true)
-			c.Abort()
-			return
-		}
-		claims, err := auth.ParseJwt(authToken)
-		if err != nil {
-			c.Set("Unauthenticated", true)
-			c.Abort()
-			return
-		}
-		if claims["aud"] != "go-form" {
-			c.Error(fmt.Errorf("Invalid audience"))
-			c.Set("Unauthenticated", true)
-			c.Abort()
-			return
-		}
-		userId, err := strconv.Atoi(claims["sub"].(string))
-		if err != nil {
-			c.Error(fmt.Errorf("Invalid user id"))
 			c.Set("Unauthenticated", true)
 			c.Abort()
 			return
@@ -178,7 +177,7 @@ func main() {
 		}
 		c.IndentedJSON(200, user)
 	})
-	authenticated.GET("/logout", func(c *gin.Context) {
+	r.GET("/logout", func(c *gin.Context) {
 		c.SetCookie(
 			"goform_auth",
 			"",
@@ -194,6 +193,8 @@ func main() {
 	RegisterResource(authenticated, resources.AssignmentResource{})
 	r.GET("/login", HandleLogin())
 	r.POST("/login", HandlePostLogin())
+	r.GET("/relogin", HandleRelogin())
+	r.PUT("/relogin", HandlePutRelogin(isProduction))
 
 	r.GET("/", func(c *gin.Context) {
 		c.Redirect(302, "/users")

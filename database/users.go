@@ -13,6 +13,13 @@ type UserRow struct {
 	DateOfBirth time.Time `db:"date_of_birth"`
 }
 
+type ReloginTokenRow struct {
+	Id        int32     `db:"id"`
+	UserId    int32     `db:"user_id"`
+	Token     string    `db:"token"`
+	CreatedAt time.Time `db:"created_at"`
+}
+
 func GetUser(id int) (*UserRow, error) {
 	users := []UserRow{}
 	err := db.Select(&users, "select id, name, email, date_of_birth from users where id = $1", id)
@@ -37,6 +44,40 @@ func GetUserByEmail(email string) (*UserRow, error) {
 	}
 
 	return &users[0], nil
+}
+
+func InsertReloginToken(userId int32, token string) (int, error) {
+	result := struct {
+		Id int `db:"id"`
+	}{}
+	err := db.Get(
+		&result,
+		"insert into relogin_tokens (user_id, token) values ($1, $2) returning id",
+		userId, token,
+	)
+	if err != nil {
+		return 0, fmt.Errorf("failed to insert relogin token: %w", err)
+	}
+	return result.Id, nil
+}
+
+func ConsumeReloginToken(userId int32, token string, createdAfter time.Time) error {
+	result, err := db.Exec(
+		"delete from relogin_tokens where token = $1 and user_id = $2 and created_at > $3",
+		token, userId, createdAfter,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to consume relogin token: %w", err)
+	}
+	rows, err := result.RowsAffected()
+	fmt.Printf("Consumed %d tokens\n", rows)
+	if err != nil {
+		panic("database driver does not support rows affected")
+	}
+	if rows <= 0 {
+		return ErrNotFound
+	}
+	return nil
 }
 
 func GetUsers(page, pageSize int) ([]UserRow, error) {

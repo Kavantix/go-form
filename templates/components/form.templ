@@ -44,6 +44,8 @@ templ form[T any](config (FormConfig[T]), row *T, validationErrors map[string]st
 			@field.RenderFormField(config, row)
 		}
 		<br/>
-		{ children... }
+		<div class="flex gap-2">
+			{ children... }
+		</div>
 	</form>
 }

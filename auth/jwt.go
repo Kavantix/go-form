@@ -18,7 +18,7 @@ var jwtParser = jwt.NewParser(
 	}),
 	jwt.WithIssuedAt(),
 	jwt.WithExpirationRequired(),
-	jwt.WithLeeway(time.Minute*1),
+	jwt.WithLeeway(time.Second*10),
 	jwt.WithIssuer("go-form"),
 )
 

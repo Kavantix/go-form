@@ -6,17 +6,58 @@ templ Login(email string) {
 	<html>
 		@Head()
 		<body hx-boost="true">
-			<form method="POST" class="h-full w-full flex justify-center items-center flex-col gap-2">
-				<div>
-					<label for="email">Email</label>
-					@components.TextField(true, "email", "email", "Email", email)
-				</div>
-				@components.Button("") {
-					Request login link
-				}
-			</form>
+			@LoginForm(email)
 		</body>
 	</html>
+}
+
+templ LoginForm(email string) {
+	<form method="POST" class="h-full w-full flex justify-center items-center flex-col gap-2">
+		<div>
+			<label for="email">Email</label>
+			@components.TextField(true, "email", "email", "Email", email)
+		</div>
+		@components.Button(components.ButtonConfig{}) {
+			Request login link
+		}
+	</form>
+}
+
+templ SessionExpired() {
+	<form hx-get="/relogin" hx-swap="outerHTML" class="h-full w-full flex justify-center items-center flex-col gap-2">
+		<h1>Your session has expired</h1>
+		<h2>Do you want to renew you session?</h2>
+		<div class="flex gap-2">
+			@components.Button(components.ButtonConfig{}) {
+				Yes
+			}
+			@components.Button(components.ButtonConfig{Href: "/logout", Type: components.ButtonSecondary}) {
+				No
+			}
+		</div>
+	</form>
+}
+
+templ ReloginForm(email, token string, err string) {
+	<form hx-put="/relogin" hx-swap="delete" class="h-full w-full flex justify-center items-center flex-col gap-2">
+		<h1>Your session has expired</h1>
+		<h2>Please enter the token you received at { email }</h2>
+		<div>
+			<label for="token">Token</label>
+			@components.TextField(true, "text", "token", "123456", token)
+			if err != "" {
+				<p
+					aria-live="true"
+					class="mt-2 text-sm text-red-600 dark:text-red-500"
+				>
+					{ err }
+				</p>
+			}
+		</div>
+		@components.Button(components.ButtonConfig{}) {
+			Validate
+		}
+	</form>
 }
 
 templ LoginMessage() {

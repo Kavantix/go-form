@@ -65,7 +65,7 @@ func ResourceOverview[T any](resource resources.Resource[T], rows []T) templ.Com
 				}
 				return templ_7745c5c3_Err
 			})
-			templ_7745c5c3_Err = components.Button(resource.Location(nil)+"/create").Render(templ.WithChildren(ctx, templ_7745c5c3_Var3), templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = components.Button(components.ButtonConfig{Href: resource.Location(nil) + "/create"}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var3), templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -120,7 +120,7 @@ func ResourceView[T any](resource resources.Resource[T], row *T, validationError
 						templ_7745c5c3_Buffer = templ.GetBuffer()
 						defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
 					}
-					templ_7745c5c3_Var10 := `Cancel`
+					templ_7745c5c3_Var10 := `Save`
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var10)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
@@ -130,7 +130,7 @@ func ResourceView[T any](resource resources.Resource[T], row *T, validationError
 					}
 					return templ_7745c5c3_Err
 				})
-				templ_7745c5c3_Err = components.Button(resource.Location(nil)).Render(templ.WithChildren(ctx, templ_7745c5c3_Var9), templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = components.Button(components.ButtonConfig{}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var9), templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -144,7 +144,7 @@ func ResourceView[T any](resource resources.Resource[T], row *T, validationError
 						templ_7745c5c3_Buffer = templ.GetBuffer()
 						defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
 					}
-					templ_7745c5c3_Var12 := `Save`
+					templ_7745c5c3_Var12 := `Cancel`
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var12)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
@@ -154,7 +154,7 @@ func ResourceView[T any](resource resources.Resource[T], row *T, validationError
 					}
 					return templ_7745c5c3_Err
 				})
-				templ_7745c5c3_Err = components.Button("").Render(templ.WithChildren(ctx, templ_7745c5c3_Var11), templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = components.Button(components.ButtonConfig{Href: resource.Location(nil), Type: components.ButtonSecondary}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var11), templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -236,7 +236,7 @@ func ResourceCreate[T any](resource resources.Resource[T], row *T, validationErr
 						templ_7745c5c3_Buffer = templ.GetBuffer()
 						defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
 					}
-					templ_7745c5c3_Var19 := `Cancel`
+					templ_7745c5c3_Var19 := `Save`
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var19)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
@@ -246,7 +246,7 @@ func ResourceCreate[T any](resource resources.Resource[T], row *T, validationErr
 					}
 					return templ_7745c5c3_Err
 				})
-				templ_7745c5c3_Err = components.Button(resource.Location(nil)).Render(templ.WithChildren(ctx, templ_7745c5c3_Var18), templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = components.Button(components.ButtonConfig{}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var18), templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -260,7 +260,7 @@ func ResourceCreate[T any](resource resources.Resource[T], row *T, validationErr
 						templ_7745c5c3_Buffer = templ.GetBuffer()
 						defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
 					}
-					templ_7745c5c3_Var21 := `Save`
+					templ_7745c5c3_Var21 := `Cancel`
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var21)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
@@ -270,7 +270,7 @@ func ResourceCreate[T any](resource resources.Resource[T], row *T, validationErr
 					}
 					return templ_7745c5c3_Err
 				})
-				templ_7745c5c3_Err = components.Button("").Render(templ.WithChildren(ctx, templ_7745c5c3_Var20), templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = components.Button(components.ButtonConfig{Href: resource.Location(nil), Type: components.ButtonSecondary}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var20), templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}

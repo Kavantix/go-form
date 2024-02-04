@@ -18,31 +18,109 @@ import (
 	"github.com/google/uuid"
 )
 
-func HandleLogin() func(c *gin.Context) {
-	tryGetEmailForExpiredToken := func(token string) string {
-		claims, err := auth.ParseJwt(token)
-		if !errors.Is(err, auth.ErrTokenExpired) {
-			return ""
-		}
-		userId, err := strconv.Atoi(claims["sub"].(string))
-		if err != nil {
-			return ""
-		}
-		user, err := database.GetUser(userId)
-		if err != nil {
-			return ""
-		}
-		return user.Email
+func tryGetUserIdFromCookie(c *gin.Context, allowExpired bool) (int, error) {
+	token, err := c.Cookie("goform_auth")
+	if err != nil {
+		return 0, err
 	}
+	claims, err := auth.ParseJwt(token)
+	if err != nil && (!allowExpired || !errors.Is(err, auth.ErrTokenExpired)) {
+		return 0, err
+	}
+	if claims["aud"] != "go-form" {
+		return 0, fmt.Errorf("invalid audience")
+	}
+	userId, err := strconv.Atoi(claims["sub"].(string))
+	if err != nil {
+		return 0, err
+	}
+	return userId, nil
+}
+
+func tryGetUserFromCookie(c *gin.Context, allowExpired bool) (*database.UserRow, error) {
+	userId, err := tryGetUserIdFromCookie(c, allowExpired)
+	if err != nil {
+		return nil, err
+	}
+	user, err := database.GetUser(userId)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
+func HandleRelogin() func(c *gin.Context) {
 	return func(c *gin.Context) {
-		authToken, err := c.Cookie("goform_auth")
+		user, err := tryGetUserFromCookie(c, true)
+		if err != nil {
+			htmxRedirect(c, "/login")
+			return
+		}
+		token, err := auth.GenerateOTP(6)
+		if err != nil {
+			c.AbortWithError(500, fmt.Errorf("failed to generate relogin token: %w", err))
+			return
+		}
+		_, err = database.InsertReloginToken(user.Id, token)
+		if err != nil {
+			c.AbortWithError(500, fmt.Errorf("failed to save relogin token: %w", err))
+			return
+		}
+		mails.Relogin(mails.ReloginMailContent{
+			User:  user,
+			Token: token,
+		}).SendTo(user.Email)
+		template(c, 200, templates.ReloginForm(user.Email, "", ""))
+	}
+}
+
+func HandlePutRelogin(isProduction bool) func(c *gin.Context) {
+	return func(c *gin.Context) {
+		user, err := tryGetUserFromCookie(c, true)
+		if err != nil {
+			htmxRedirect(c, "/login")
+			return
+		}
+		tokenInvalid := func(c *gin.Context, token string) {
+			c.Header("HX-Reswap", "outerHTML")
+			template(c, 422, templates.ReloginForm(user.Email, token, fmt.Sprintf("Token `%s` is invalid", token)))
+		}
+		token := c.PostForm("token")
+		if len(token) != 6 {
+			tokenInvalid(c, token)
+			return
+		}
+		createdAfter := time.Now().Add(-time.Minute * 5)
+		err = database.ConsumeReloginToken(user.Id, token, createdAfter)
+		if err != nil {
+			if errors.Is(err, database.ErrNotFound) {
+				tokenInvalid(c, token)
+				return
+			} else {
+				c.AbortWithError(500, err)
+				return
+			}
+		}
+		err = setUserLoggedInCookie(c, int(user.Id), isProduction)
+		if err != nil {
+			c.AbortWithError(500, fmt.Errorf("Failed to create token: %w", err))
+			return
+		}
+		c.Status(200)
+	}
+}
+
+func HandleLogin() func(c *gin.Context) {
+	return func(c *gin.Context) {
 		email := ""
+		user, err := tryGetUserFromCookie(c, true)
 		if err == nil {
-			email = tryGetEmailForExpiredToken(authToken)
+			email = user.Email
 		}
 		template(c, 200, templates.Login(email))
 	}
 }
+
 func HandlePostLogin() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		email := c.PostForm("email")
@@ -129,23 +207,42 @@ func HandleLoginLink(isProduction bool) func(c *gin.Context) {
 			return
 		}
 
-		authToken, err := auth.CreateJwt(&auth.JwtOptions{
-			Subject:  rawUserId,
-			Audience: "go-form",
-			ValidFor: time.Hour,
-		})
+		err = setUserLoggedInCookie(c, userId, isProduction)
+		if err != nil {
+			c.AbortWithError(500, fmt.Errorf("Failed to create token: %w", err))
+			return
+		}
 
-		c.SetCookie(
-			"goform_auth",
-			authToken,
-			3600,
-			"",
-			"",
-			isProduction,
-			true,
-		)
-		c.Redirect(302, "/users")
+		if c.GetBool("isHtmx") {
+			htmxRedirect(c, "/users")
+		} else {
+			c.Redirect(302, "/users")
+		}
 	}
+}
+
+func setUserLoggedInCookie(c *gin.Context, userId int, isProduction bool) error {
+	authToken, err := auth.CreateJwt(&auth.JwtOptions{
+		Subject:  strconv.Itoa(userId),
+		Audience: "go-form",
+		ValidFor: time.Hour,
+	})
+	if err != nil {
+		return err
+	}
+
+	c.SetCookie(
+		"goform_auth",
+		authToken,
+		// a week in seconds
+		3600*24*7,
+		"",
+		"",
+		isProduction,
+		true,
+	)
+
+	return nil
 }
 
 func HandleGetUploadUrl(disk interfaces.DirectUploadDisk) func(c *gin.Context) {
