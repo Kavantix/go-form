@@ -1,5 +1,11 @@
-#! /bin/sh
+#! /bin/bash
 
-set -xe
+set -e
 
-goose -dir migrations -s postgres "host=db user=postgres password=postgres dbname=postgres sslmode=disable" $@
+if [ -f .env ]; then
+	set -a
+	source .env
+	set +a
+fi
+
+goose -dir migrations -s postgres "host=$DB_HOST user=$DB_USERNAME password=$DB_PASSWORD dbname=$DB_DATABASE sslmode=$DB_SSLMODE" $@

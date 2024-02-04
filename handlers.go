@@ -11,6 +11,7 @@ import (
 	"github.com/Kavantix/go-form/auth"
 	"github.com/Kavantix/go-form/database"
 	"github.com/Kavantix/go-form/interfaces"
+	"github.com/Kavantix/go-form/mails"
 	"github.com/Kavantix/go-form/resources"
 	"github.com/Kavantix/go-form/templates"
 	"github.com/gin-gonic/gin"
@@ -18,8 +19,28 @@ import (
 )
 
 func HandleLogin() func(c *gin.Context) {
+	tryGetEmailForExpiredToken := func(token string) string {
+		claims, err := auth.ParseJwt(token)
+		if !errors.Is(err, auth.ErrTokenExpired) {
+			return ""
+		}
+		userId, err := strconv.Atoi(claims["sub"].(string))
+		if err != nil {
+			return ""
+		}
+		user, err := database.GetUser(userId)
+		if err != nil {
+			return ""
+		}
+		return user.Email
+	}
 	return func(c *gin.Context) {
-		template(c, 200, templates.Login())
+		authToken, err := c.Cookie("goform_auth")
+		email := ""
+		if err == nil {
+			email = tryGetEmailForExpiredToken(authToken)
+		}
+		template(c, 200, templates.Login(email))
 	}
 }
 func HandlePostLogin() func(c *gin.Context) {
@@ -48,10 +69,17 @@ func HandlePostLogin() func(c *gin.Context) {
 
 			return
 		}
-		fmt.Printf("\nToken link for %s:\nhttp://localhost/loginlink?token=%s\n\n",
-			email,
+
+		link := fmt.Sprintf("http://%s/loginlink?token=%s",
+			c.Request.Host,
 			url.QueryEscape(token),
 		)
+
+		mails.Login(mails.LoginMailContent{
+			User: user,
+			Link: link,
+		}).SendTo(user.Email)
+
 		template(c, 200, templates.LoginMessage())
 	}
 }

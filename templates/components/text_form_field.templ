@@ -11,7 +11,7 @@ type TextFormFieldConfig[T any] struct {
 	FieldValue  func(row *T) string
 }
 
-templ TextField(required bool, fieldType, name, placeholder string) {
+templ TextField(required bool, fieldType, name, placeholder, value string) {
 	<input
 		x-bind="input"
 		required?={ required }
@@ -23,6 +23,9 @@ templ TextField(required bool, fieldType, name, placeholder string) {
 		}
 		if name != "" {
 			name={ name }
+		}
+		if value != "" {
+			value={ value }
 		}
 		class="input input-bordered"
 		:class="valid ? '' : 'input-error'"
@@ -37,6 +40,7 @@ templ TextFormField[T any](form (FormConfig[T]), config (*TextFormFieldConfig[T]
 		config.Type,
     "",
 		config.Placeholder,
+    config.FieldValue(value),
 		)
 	}
 }

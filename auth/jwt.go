@@ -1,10 +1,15 @@
 package auth
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+)
+
+var (
+	ErrTokenExpired = errors.New("token is expired")
 )
 
 var jwtParser = jwt.NewParser(
@@ -24,6 +29,9 @@ func keyFunc(t *jwt.Token) (any, error) {
 func ParseJwt(tokenString string) (jwt.MapClaims, error) {
 	claims := jwt.MapClaims{}
 	_, err := jwtParser.ParseWithClaims(tokenString, claims, keyFunc)
+	if errors.Is(err, jwt.ErrTokenExpired) {
+		return claims, ErrTokenExpired
+	}
 	if err != nil {
 		return nil, err
 	}

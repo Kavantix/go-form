@@ -7,6 +7,8 @@ create table if not exists users (
   date_of_birth date,
   name varchar(255)
 );
+
+insert into users(email, name, date_of_birth) values('mail@pietervanloon.com', 'Pieter', '1994-12-14');
 -- +goose StatementEnd
 --
 -- +goose Down

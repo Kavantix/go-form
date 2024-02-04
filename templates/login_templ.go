@@ -12,7 +12,7 @@ import "bytes"
 
 import "github.com/Kavantix/go-form/templates/components"
 
-func Login() templ.Component {
+func Login(email string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
 		if !templ_7745c5c3_IsBuffer {
@@ -33,7 +33,7 @@ func Login() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<body hx-boost=\"true\" style=\"position: flex; justify-content: center; aligh-items: center; height: 100%; width: 100%;\"><form method=\"POST\"><div><label for=\"email\">")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<body hx-boost=\"true\"><form method=\"POST\" class=\"h-full w-full flex justify-center items-center flex-col gap-2\"><div><label for=\"email\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -46,7 +46,7 @@ func Login() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = components.TextField(true, "email", "email", "Email").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = components.TextField(true, "email", "email", "Email", email).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

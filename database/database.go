@@ -19,11 +19,12 @@ type CountResult struct {
 	Count int `db:"count"`
 }
 
-func Connect(host, username, password, database string) error {
+func Connect(host, port, username, password, database, sslmode string) error {
 	connStr := fmt.Sprintf(
-		"postgres://%s:%s@%s/%s?sslmode=disable",
+		"postgres://%s:%s@%s:%s/%s?sslmode=%s",
 		username, password,
-		host, database,
+		host, port, database,
+		sslmode,
 	)
 	var err error
 	db, err = sqlx.Open("postgres", connStr)

@@ -18,6 +18,14 @@ services:
       POSTGRES_DB: postgres
     volumes:
       - db:/var/lib/postgresql/data
+  mailhog:
+    image: mailhog/mailhog:latest
+    networks:
+      - nginx
+      - default
+    environment:
+      VIRTUAL_HOST: mailhog.go-form.test
+      VIRTUAL_PORT: "8025"
 
 volumes:
   db:

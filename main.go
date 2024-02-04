@@ -92,7 +92,14 @@ func main() {
 	default:
 		log.Fatalf("UPLOAD_DISK '%s' is not supported, supported: (locale/s3)", uploadDisk)
 	}
-	err = database.Connect("db", "postgres", "postgres", "postgres")
+	err = database.Connect(
+		MustLookupEnv("DB_HOST"),
+		LookupEnv("DB_PORT", "5432"),
+		MustLookupEnv("DB_USERNAME"),
+		MustLookupEnv("DB_PASSWORD"),
+		MustLookupEnv("DB_DATABASE"),
+		MustLookupEnv("DB_SSLMODE"),
+	)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -21,7 +21,7 @@ type TextFormFieldConfig[T any] struct {
 	FieldValue  func(row *T) string
 }
 
-func TextField(required bool, fieldType, name, placeholder string) templ.Component {
+func TextField(required bool, fieldType, name, placeholder, value string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
 		if !templ_7745c5c3_IsBuffer {
@@ -83,6 +83,20 @@ func TextField(required bool, fieldType, name, placeholder string) templ.Compone
 				return templ_7745c5c3_Err
 			}
 		}
+		if value != "" {
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" value=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(value))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" class=\"input input-bordered\" :class=\"valid ? &#39;&#39; : &#39;input-error&#39;\" placeholder=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
@@ -126,6 +140,7 @@ func TextFormField[T any](form FormConfig[T], config *TextFormFieldConfig[T], va
 				config.Type,
 				"",
 				config.Placeholder,
+				config.FieldValue(value),
 			).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err

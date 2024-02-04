@@ -2,14 +2,14 @@ package templates
 
 import "github.com/Kavantix/go-form/templates/components"
 
-templ Login() {
+templ Login(email string) {
 	<html>
 		@Head()
-		<body hx-boost="true" style="position: flex; justify-content: center; aligh-items: center; height: 100%; width: 100%;">
-			<form method="POST">
+		<body hx-boost="true">
+			<form method="POST" class="h-full w-full flex justify-center items-center flex-col gap-2">
 				<div>
 					<label for="email">Email</label>
-					@components.TextField(true, "email", "email", "Email")
+					@components.TextField(true, "email", "email", "Email", email)
 				</div>
 				@components.Button("") {
 					Request login link
