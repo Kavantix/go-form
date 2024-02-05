@@ -320,20 +320,48 @@ func HandleUploadFile(disk interfaces.Disk) func(c *gin.Context) {
 		})
 	}
 }
+func HandleResourceIndexStream[T any](resource resources.Resource[T]) func(c *gin.Context) {
+	return func(c *gin.Context) {
+		startSseStream(c)
+		for i := 1; i <= 10; i++ {
+			rows, err := resource.FetchPage(0, 10)
+			if err != nil {
+				c.Error(err)
+				c.Abort()
+				return
+			}
+			start := time.Now()
+			select {
+			case <-c.Request.Context().Done():
+				// "Stream cancelled"
+				return
+			default:
+				templateEvent(c, "row", templates.TableRows[T](resource, resource.TableConfig(), rows))
+				diff := time.Now().Sub(start)
+				if diff < time.Millisecond*16 {
+					time.Sleep(time.Millisecond*16 - diff)
+				}
+			}
+		}
+		sendSseEvent(c, "end", "")
+		// Give browser time to disconnect
+		time.Sleep(time.Millisecond * 100)
+	}
+}
 
 func HandleResourceIndex[T any](resource resources.Resource[T]) func(c *gin.Context) {
 	return func(c *gin.Context) {
-		page, pageSize, err := paginationParams(c)
-		if err != nil {
-			c.AbortWithError(400, err)
-			return
-		}
-		rows, err := resource.FetchPage(page, pageSize)
-		if err != nil {
-			c.AbortWithError(500, err)
-			return
-		}
-		template(c, 200, templates.ResourceOverview(resource, rows))
+		// page, pageSize, err := paginationParams(c)
+		// if err != nil {
+		// 	c.AbortWithError(400, err)
+		// 	return
+		// }
+		// rows, err := resource.FetchPage(page, pageSize)
+		// if err != nil {
+		// 	c.AbortWithError(500, err)
+		// 	return
+		// }
+		template(c, 200, templates.ResourceOverview(resource, []T{}))
 	}
 }
 

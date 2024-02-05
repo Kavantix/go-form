@@ -3,6 +3,7 @@ package templates
 import (
 	"fmt"
 	"github.com/Kavantix/go-form/resources"
+	"github.com/Kavantix/go-form/templates/components"
 )
 
 templ Table[T any](resource resources.Resource[T], rows []T) {
@@ -11,12 +12,29 @@ templ Table[T any](resource resources.Resource[T], rows []T) {
 
 templ table[T any](resource resources.Resource[T], columns [](resources.ColumnConfig[T]), rows []T) {
 	<div class="pb-4 px-4 rounded-md w-full">
-		<div class="flex justify-between w-full pt-6 ">
-			<h1 class="mx-4 text-xl">{ resource.Title() }</h1>
+		<div class="flex justify-between items-center w-full pt-6 ">
+			<h1 class="mx-4 text-xl flex items-center gap-2">
+				{ resource.Title() }
+				<div
+					class="loader inline-block"
+					hx-ext="sse"
+					sse-connect={ fmt.Sprintf("%s/stream", resource.Location(nil)) }
+					sse-swap="end"
+					hx-target="this"
+					hx-swap="delete"
+				>
+					<div sse-swap="row" hx-target="next tbody" hx-swap="beforeend"></div>
+				</div>
+			</h1>
+			@components.Button(components.ButtonConfig{Href: resource.Location(nil)+"/create"}) {
+				Add { resource.Title() }
+			}
 		</div>
 		<div class="w-full flex justify-start px-2 mt-2">
 			<div class="overflow-x-auto mt-6 w-full">
-				<table class="table table-lg w-full">
+				<table
+					class="table table-lg w-full"
+				>
 					<thead>
 						<tr style="font-size: 0.9674rem">
 							for _, column := range columns {
@@ -24,22 +42,28 @@ templ table[T any](resource resources.Resource[T], columns [](resources.ColumnCo
 							}
 						</tr>
 					</thead>
-					<tbody>
-						for _, row := range rows {
-							<tr
-								hx-get={ resource.Location(&row) }
-								hx-target="body"
-								hx-push-url="true"
-								class="cursor-pointer hover"
-							>
-								for _, column := range columns {
-									<td class="px-4 py-4">{ fmt.Sprintf("%v", column.Value(&row)) }</td>
-								}
-							</tr>
-						}
-					</tbody>
+					<tbody></tbody>
 				</table>
 			</div>
 		</div>
 	</div>
+}
+
+templ TableRows[T any](resource resources.Resource[T], columns [](resources.ColumnConfig[T]), rows []T) {
+	for _, row := range rows {
+		@TableRow(resource, columns, row)
+	}
+}
+
+templ TableRow[T any](resource resources.Resource[T], columns [](resources.ColumnConfig[T]), row T) {
+	<tr
+		hx-get={ resource.Location(&row) }
+		hx-target="body"
+		hx-push-url="true"
+		class="cursor-pointer hover fade-in"
+	>
+		for _, column := range columns {
+			<td class="py-0 px-4"><div class="py-4">{ fmt.Sprintf("%v", column.Value(&row)) }</div></td>
+		}
+	</tr>
 }

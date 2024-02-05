@@ -15,6 +15,7 @@ import (
 	"github.com/Kavantix/go-form/interfaces"
 	"github.com/Kavantix/go-form/resources"
 	"github.com/Kavantix/go-form/templates"
+	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 
@@ -24,6 +25,7 @@ import (
 func RegisterResource[T any](e *gin.RouterGroup, resource resources.Resource[T]) {
 	r := e.Group(resource.Location(nil))
 	r.GET("", HandleResourceIndex(resource))
+	r.GET("/stream", HandleResourceIndexStream(resource))
 	r.GET("/:id", HandleResourceView(resource))
 	r.GET("/:id/validate", HandleValidateResource(resource))
 	r.GET("/create", HandleResourceCreate(resource))
@@ -108,6 +110,7 @@ func main() {
 	database.Debug()
 
 	r := gin.Default()
+	r.Use(gzip.Gzip(gzip.BestSpeed))
 	r.Static("/storage", "./storage/public/")
 	r.Static("/js", "./public/js/")
 	r.Use(func(c *gin.Context) {

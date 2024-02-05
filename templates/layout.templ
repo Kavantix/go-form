@@ -6,6 +6,7 @@ templ Head() {
 	<head>
 		<title>Go Form Example</title>
 		<script src="https://unpkg.com/htmx.org@1.9.6" integrity="sha384-FhXw7b6AlE/jyjlZH5iHa/tTe9EpJ1Y55RjcgPbjeWMskSxZt1v9qkxLJWNJaGni" crossorigin="anonymous"></script>
+		<script src="https://unpkg.com/htmx.org/dist/ext/sse.js"></script>
 		<script src="https://unpkg.com/alpinejs" defer></script>
 		<link href="https://cdn.jsdelivr.net/npm/daisyui@4.6.0/dist/full.min.css" rel="stylesheet" type="text/css"/>
 		<script src="https://cdn.tailwindcss.com"></script>
@@ -18,6 +19,40 @@ thead tr th:last-child { border-top-right-radius: 10px; border-bottom-right-radi
 tbody tr td:first-child { border-top-left-radius: 5px; border-bottom-left-radius: 0px;}
 tbody tr td:last-child { border-top-right-radius: 5px; border-bottom-right-radius: 0px;}
 
+.loader {
+  border: 4px solid #f3f3f3; /* Light grey */
+  border-top: 4px solid #3498db; /* Blue */
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.fade-in.htmx-added td div, .fade-in.htmx-added {
+  max-height: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+  opacity: 0;
+  padding: 0;
+  border-width: 0;
+}
+.fade-in td div, .fade-in {
+  max-height: 200px;
+  box-sizing: border-box;
+  transition: 
+    opacity 0.4s ease;
+  overflow: hidden;
+  opacity: 1;
+}
+
+table {
+  border-collapse: collapse;
+}
 
 </style>
 	</head>

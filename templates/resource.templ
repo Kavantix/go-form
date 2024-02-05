@@ -6,11 +6,6 @@ import "github.com/Kavantix/go-form/templates/components"
 templ ResourceOverview[T any](resource resources.Resource[T], rows []T) {
 	@Layout(resource.Location(nil)) {
 		@Table(resource, rows)
-		<div class="mx-8">
-			@components.Button(components.ButtonConfig{Href: resource.Location(nil)+"/create"}) {
-				Add { resource.Title() }
-			}
-		</div>
 	}
 }
 
