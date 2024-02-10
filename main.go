@@ -15,6 +15,8 @@ import (
 	"github.com/Kavantix/go-form/interfaces"
 	"github.com/Kavantix/go-form/resources"
 	"github.com/Kavantix/go-form/templates"
+	"github.com/getsentry/sentry-go"
+	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -52,11 +54,27 @@ func LookupEnv(key, fallback string) string {
 	return value
 }
 
+func InitSentry() error {
+	err := sentry.Init(sentry.ClientOptions{
+		Dsn:              MustLookupEnv("SENTRY_DSN"),
+		TracesSampleRate: 1.0,
+		EnableTracing:    true,
+	})
+	if err != nil {
+		return fmt.Errorf("sentry.Init: %s", err)
+	}
+	return nil
+}
+
 func main() {
 	isProduction := false
 	err := godotenv.Load()
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		log.Fatalf("Error loading .env file:\n%s\n", err)
+	}
+	err = InitSentry()
+	if err != nil {
+		log.Fatalf("Cannot initialize sentry:\n%s\n", err)
 	}
 
 	err = auth.LoadKeys(MustLookupEnv("PRIVATE_KEY"), MustLookupEnv("PUBLIC_KEY"))
@@ -110,6 +128,9 @@ func main() {
 	database.Debug()
 
 	r := gin.Default()
+	r.Use(sentrygin.New(sentrygin.Options{
+		Repanic: true,
+	}))
 	r.Use(gzip.Gzip(gzip.BestSpeed))
 	r.Static("/storage", "./storage/public/")
 	r.Static("/js", "./public/js/")

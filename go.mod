@@ -9,6 +9,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.47.7
 	github.com/aws/smithy-go v1.19.0
 	github.com/bearbin/go-age v0.0.0-20210220235509-f0fa00c278ce
+	github.com/getsentry/sentry-go v0.27.0
 	github.com/gin-contrib/gzip v0.0.6
 	github.com/gin-gonic/gin v1.9.1
 	github.com/golang-jwt/jwt/v5 v5.2.0
