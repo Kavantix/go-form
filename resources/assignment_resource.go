@@ -1,6 +1,7 @@
 package resources
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strconv"
@@ -17,11 +18,11 @@ func (r AssignmentResource) Title() string {
 	return "Assignments"
 }
 
-func (r AssignmentResource) FetchPage(page, pageSize int) ([]database.AssignmentRow, error) {
+func (r AssignmentResource) FetchPage(ctx context.Context, page, pageSize int) ([]database.AssignmentRow, error) {
 	return database.GetAssignments(page, pageSize)
 }
 
-func (r AssignmentResource) FetchRow(id int) (*database.AssignmentRow, error) {
+func (r AssignmentResource) FetchRow(ctx context.Context, id int) (*database.AssignmentRow, error) {
 	return database.GetAssignment(id)
 }
 

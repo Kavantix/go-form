@@ -1,6 +1,7 @@
 package resources
 
 import (
+	"context"
 	"fmt"
 
 	. "github.com/Kavantix/go-form/interfaces"
@@ -33,8 +34,8 @@ type ColumnConfig[T any] struct {
 
 type Resource[T any] interface {
 	Title() string
-	FetchPage(page, pageSize int) ([]T, error)
-	FetchRow(id int) (*T, error)
+	FetchPage(ctx context.Context, page, pageSize int) ([]T, error)
+	FetchRow(ctx context.Context, id int) (*T, error)
 	ParseRow(id *int, formFields map[string]string) (*T, error)
 	CreateRow(*T) (int, error)
 	UpdateRow(*T) error

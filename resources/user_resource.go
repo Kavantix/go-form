@@ -1,6 +1,7 @@
 package resources
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strconv"
@@ -19,12 +20,12 @@ func (r UserResource) Title() string {
 	return "Users"
 }
 
-func (r UserResource) FetchPage(page, pageSize int) ([]database.UserRow, error) {
-	return database.GetUsers(page, pageSize)
+func (r UserResource) FetchPage(ctx context.Context, page, pageSize int) ([]database.UserRow, error) {
+	return database.GetUsers(ctx, page, pageSize)
 }
 
-func (r UserResource) FetchRow(id int) (*database.UserRow, error) {
-	return database.GetUser(id)
+func (r UserResource) FetchRow(ctx context.Context, id int) (*database.UserRow, error) {
+	return database.GetUser(ctx, id)
 }
 
 func (r UserResource) ParseRow(id *int, formFields map[string]string) (*database.UserRow, error) {

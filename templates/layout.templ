@@ -2,6 +2,30 @@ package templates
 
 import . "github.com/Kavantix/go-form/templates/components"
 
+var FrontendSentryDSN string
+
+script initSentry(dsn string) {
+  Sentry.init({
+    dsn: dsn,
+
+    // Alternatively, use `process.env.npm_package_version` for a dynamic release version
+    // if your build tool supports it.
+    release: "go-form@0.0.1",
+    environment: "local",
+    integrations: [
+      Sentry.browserTracingIntegration(),
+    ],
+
+    // Set tracesSampleRate to 1.0 to capture 100%
+    // of transactions for performance monitoring.
+    // We recommend adjusting this value in production
+    tracesSampleRate: 1.0,
+
+    // Set `tracePropagationTargets` to control for which URLs distributed tracing should be enabled
+    tracePropagationTargets: ["http://go-form.test", , /^\//],
+  });
+}
+
 templ Head() {
 	<head>
 		<title>Go Form Example</title>
@@ -10,7 +34,9 @@ templ Head() {
 		<script src="https://unpkg.com/alpinejs" defer></script>
 		<link href="https://cdn.jsdelivr.net/npm/daisyui@4.6.0/dist/full.min.css" rel="stylesheet" type="text/css"/>
 		<script src="https://cdn.tailwindcss.com"></script>
+		<script src="https://browser.sentry-cdn.com/7.100.1/bundle.tracing.min.js" integrity="sha384-qDHTQsvbyIJZnxDsxk/o7/rgkA/DS8Rjg+HWqi7QyCEDW0x8K2N7XT9NBXdFpivP" crossorigin="anonymous"></script>
 		<script src="/js/app.js"></script>
+		@initSentry(FrontendSentryDSN)
 		<style>
   
 thead tr th:first-child { border-top-left-radius: 10px; border-bottom-left-radius: 10px;}

@@ -1,10 +1,14 @@
 package database
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
 
+	"github.com/getsentry/sentry-go"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -12,11 +16,30 @@ var (
 	ErrNotFound       = errors.New("entry not found")
 	ErrDuplicateEmail = errors.New("email already exists")
 
-	db *sqlx.DB
+	db   *sqlx.DB
+	conn *pgxpool.Pool
 )
 
 type CountResult struct {
 	Count int `db:"count"`
+}
+
+type sentryTracer struct {
+}
+
+func (s sentryTracer) TraceQueryStart(ctx context.Context, conn *pgx.Conn, data pgx.TraceQueryStartData) context.Context {
+	span := sentry.StartSpan(ctx, "db.sql.query")
+	span.SetData("db.system", "postgresql")
+	span.Description = data.SQL
+	return context.WithValue(ctx, "querySpan", span)
+}
+
+func (s sentryTracer) TraceQueryEnd(ctx context.Context, conn *pgx.Conn, data pgx.TraceQueryEndData) {
+	span := ctx.Value("querySpan").(*sentry.Span)
+	if data.Err != nil && !errors.Is(data.Err, pgx.ErrNoRows) {
+		span.Status = sentry.SpanStatusInternalError
+	}
+	span.Finish()
 }
 
 func Connect(host, port, username, password, database, sslmode string) error {
@@ -27,6 +50,15 @@ func Connect(host, port, username, password, database, sslmode string) error {
 		sslmode,
 	)
 	var err error
+	config, err := pgxpool.ParseConfig(connStr)
+	if err != nil {
+		return fmt.Errorf("failed to create database config: %w", err)
+	}
+	config.ConnConfig.Tracer = sentryTracer{}
+	conn, err = pgxpool.NewWithConfig(context.Background(), config)
+	if err != nil {
+		return fmt.Errorf("failed to connect to database: %w", err)
+	}
 	db, err = sqlx.Open("postgres", connStr)
 	if err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)

@@ -5,13 +5,23 @@ import (
 	"strconv"
 
 	"github.com/a-h/templ"
+	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 )
 
 func template(c *gin.Context, code int, t templ.Component) {
 	c.Writer.Header().Set("Content-Type", "text/html; charset=utf-8")
 	c.Status(code)
-	t.Render(c.Request.Context(), c.Writer)
+	span := sentry.StartSpan(
+		c.Request.Context(),
+		"template.render",
+		sentry.WithDescription(fmt.Sprintf("Template: %+v", t)),
+	)
+	defer span.Finish()
+	err := t.Render(c.Request.Context(), c.Writer)
+	if err != nil {
+		c.AbortWithError(500, fmt.Errorf("failed to render template `%+v`: %w", t, err))
+	}
 }
 
 func startSseStream(c *gin.Context) {

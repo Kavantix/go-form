@@ -1,10 +1,12 @@
 package mails
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"time"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/matcornic/hermes/v2"
 	"github.com/wneessen/go-mail"
 )
@@ -35,7 +37,9 @@ func init() {
 	}
 }
 
-func (message *Email) SendTo(toEmail string, ccEmails ...string) error {
+func (message *Email) SendTo(ctx context.Context, toEmail string, ccEmails ...string) error {
+	span := sentry.StartSpan(ctx, "function", sentry.WithDescription("Send email"))
+	defer span.Finish()
 	m := mail.NewMsg()
 	if err := m.From("noreply@go-form.test"); err != nil {
 		log.Fatalf("failed to set From address: %s", err)
@@ -52,6 +56,7 @@ func (message *Email) SendTo(toEmail string, ccEmails ...string) error {
 	m.SetBodyString(mail.TypeTextPlain, message.body.plainText)
 	m.AddAlternativeString(mail.TypeTextHTML, message.body.html)
 	if err := mailClient.DialAndSend(m); err != nil {
+		span.Status = sentry.SpanStatusFailedPrecondition
 		return fmt.Errorf("failed to send mail: %w", err)
 	}
 

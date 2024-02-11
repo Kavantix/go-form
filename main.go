@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/Kavantix/go-form/auth"
@@ -55,10 +56,13 @@ func LookupEnv(key, fallback string) string {
 }
 
 func InitSentry() error {
+	templates.FrontendSentryDSN = MustLookupEnv("FRONTEND_SENTRY_DSN")
 	err := sentry.Init(sentry.ClientOptions{
-		Dsn:              MustLookupEnv("SENTRY_DSN"),
-		TracesSampleRate: 1.0,
-		EnableTracing:    true,
+		Dsn:                MustLookupEnv("SENTRY_DSN"),
+		TracesSampleRate:   1.0,
+		EnableTracing:      true,
+		ProfilesSampleRate: 1.0,
+		Environment:        "local",
 	})
 	if err != nil {
 		return fmt.Errorf("sentry.Init: %s", err)
@@ -125,12 +129,14 @@ func main() {
 		log.Fatal(err)
 	}
 	defer database.Close()
-	database.Debug()
+	// database.Debug()
 
+	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 	r.Use(sentrygin.New(sentrygin.Options{
 		Repanic: true,
 	}))
+	r.SetTrustedProxies([]string{})
 	r.Use(gzip.Gzip(gzip.BestSpeed))
 	r.Static("/storage", "./storage/public/")
 	r.Static("/js", "./public/js/")
@@ -174,10 +180,14 @@ func main() {
 			c.Abort()
 			return
 		}
+		hub := sentry.GetHubFromContext(c.Request.Context())
+		hub.Scope().SetUser(sentry.User{
+			ID: strconv.Itoa(userId),
+		})
 		var user *database.UserRow
 		c.Set("GetUser", func() (*database.UserRow, error) {
 			if user == nil {
-				user, err = database.GetUser(userId)
+				user, err = database.GetUser(c.Request.Context(), userId)
 				if err != nil {
 					return nil, err
 				}
@@ -224,5 +234,6 @@ func main() {
 		c.Redirect(302, "/users")
 	})
 
+	fmt.Println("Listening op port 80")
 	r.Run("0.0.0.0:80") // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
 }

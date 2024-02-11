@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/url"
@@ -42,7 +43,7 @@ func tryGetUserFromCookie(c *gin.Context, allowExpired bool) (*database.UserRow,
 	if err != nil {
 		return nil, err
 	}
-	user, err := database.GetUser(userId)
+	user, err := database.GetUser(c.Request.Context(), userId)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +70,7 @@ func HandleRelogin() func(c *gin.Context) {
 		mails.Relogin(mails.ReloginMailContent{
 			User:  user,
 			Token: token,
-		}).SendTo(user.Email)
+		}).SendTo(c.Request.Context(), user.Email)
 		template(c, 200, templates.ReloginForm(user.Email, "", ""))
 	}
 }
@@ -128,7 +129,7 @@ func HandlePostLogin() func(c *gin.Context) {
 			c.AbortWithError(400, fmt.Errorf("email param missing"))
 			return
 		}
-		user, err := database.GetUserByEmail(email)
+		user, err := database.GetUserByEmail(c.Request.Context(), email)
 		if errors.Is(err, database.ErrNotFound) {
 			c.Error(fmt.Errorf("email %s not found", email))
 			template(c, 200, templates.LoginMessage())
@@ -156,7 +157,7 @@ func HandlePostLogin() func(c *gin.Context) {
 		mails.Login(mails.LoginMailContent{
 			User: user,
 			Link: link,
-		}).SendTo(user.Email)
+		}).SendTo(c.Request.Context(), user.Email)
 
 		template(c, 200, templates.LoginMessage())
 	}
@@ -199,7 +200,7 @@ func HandleLoginLink(isProduction bool) func(c *gin.Context) {
 			c.Set("Unauthenticated", true)
 			return
 		}
-		_, err = database.GetUser(userId)
+		_, err = database.GetUser(c.Request.Context(), userId)
 		if err != nil {
 			c.Error(fmt.Errorf("No valid user id in claims: %w", err))
 			c.Abort()
@@ -324,9 +325,11 @@ func HandleResourceIndexStream[T any](resource resources.Resource[T]) func(c *gi
 	return func(c *gin.Context) {
 		startSseStream(c)
 		for i := 1; i <= 10; i++ {
-			rows, err := resource.FetchPage(0, 10)
+			rows, err := resource.FetchPage(c.Request.Context(), 0, 10)
 			if err != nil {
-				c.Error(err)
+				if !errors.Is(err, context.Canceled) {
+					c.Error(err)
+				}
 				c.Abort()
 				return
 			}
@@ -372,7 +375,7 @@ func HandleResourceView[T any](resource resources.Resource[T]) func(c *gin.Conte
 			c.AbortWithError(400, err)
 			return
 		}
-		row, err := resource.FetchRow(id)
+		row, err := resource.FetchRow(c.Request.Context(), id)
 		if err == database.ErrNotFound {
 			c.Status(404)
 			return

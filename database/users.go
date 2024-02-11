@@ -1,9 +1,13 @@
 package database
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 )
 
 type UserRow struct {
@@ -20,30 +24,46 @@ type ReloginTokenRow struct {
 	CreatedAt time.Time `db:"created_at"`
 }
 
-func GetUser(id int) (*UserRow, error) {
-	users := []UserRow{}
-	err := db.Select(&users, "select id, name, email, date_of_birth from users where id = $1", id)
+func GetUser(ctx context.Context, id int) (*UserRow, error) {
+	user := UserRow{}
+	err := conn.QueryRow(ctx, "select id, name, email, date_of_birth from users where id = $1", id).
+		Scan(
+			&user.Id,
+			&user.Name,
+			&user.Email,
+			&user.DateOfBirth,
+		)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNotFound
+		}
 		return nil, fmt.Errorf("failed to fetch user: %w", err)
 	}
-	if len(users) != 1 {
-		return nil, ErrNotFound
-	}
 
-	return &users[0], nil
+	return &user, nil
 }
 
-func GetUserByEmail(email string) (*UserRow, error) {
-	users := []UserRow{}
-	err := db.Select(&users, "select id, name, email, date_of_birth from users where email = $1", email)
+func GetUserByEmail(ctx context.Context, email string) (*UserRow, error) {
+	user := UserRow{}
+	err := conn.QueryRow(ctx, "select id, name, email, date_of_birth from users where email = $1", email).
+		Scan(
+			&user.Id,
+			&user.Name,
+			&user.Email,
+			&user.DateOfBirth,
+		)
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch user by email: %w", err)
 	}
-	if len(users) != 1 {
-		return nil, ErrNotFound
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, fmt.Errorf("failed to fetch user: %w", err)
 	}
 
-	return &users[0], nil
+	return &user, nil
 }
 
 func InsertReloginToken(userId int32, token string) (int, error) {
@@ -80,14 +100,26 @@ func ConsumeReloginToken(userId int32, token string, createdAfter time.Time) err
 	return nil
 }
 
-func GetUsers(page, pageSize int) ([]UserRow, error) {
+func GetUsers(ctx context.Context, page, pageSize int) ([]UserRow, error) {
 	users := []UserRow{}
-	err := db.Select(&users,
+	rows, err := conn.Query(ctx,
 		"select id, name, email, date_of_birth from users order by id limit $1 offset $2",
 		pageSize, page,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query users: %w", err)
+	}
+	defer rows.Close()
+	tempUser := UserRow{}
+	_, err = pgx.ForEachRow(rows, []any{
+		&tempUser.Id, &tempUser.Name,
+		&tempUser.Email, &tempUser.DateOfBirth,
+	}, func() error {
+		users = append(users, tempUser)
+		return nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to scan users: %w", err)
 	}
 	return users, nil
 }
