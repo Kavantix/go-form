@@ -140,7 +140,7 @@ func TextFormField[T any](form FormConfig[T], config *TextFormFieldConfig[T], va
 				config.Type,
 				"",
 				config.Placeholder,
-				config.FieldValue(value),
+				config.Value(value),
 			).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
