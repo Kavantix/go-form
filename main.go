@@ -233,6 +233,9 @@ func main() {
 	r.GET("/", func(c *gin.Context) {
 		c.Redirect(302, "/users")
 	})
+	r.NoRoute(func(c *gin.Context) {
+		template(c, 404, templates.NotFound("/users"))
+	})
 
 	fmt.Println("Listening op port 80")
 	r.Run("0.0.0.0:80") // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")

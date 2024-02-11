@@ -84,32 +84,37 @@ table {
 	</head>
 }
 
-templ Layout(currentTab string) {
-	if (IsHtmx(ctx)) {
-		@body(currentTab) {
-			{ children... }
-		}
+templ wrapWithHeadIfNeeded() {
+	if IsHtmx(ctx) {
+		{ children... }
 	} else {
 		<html>
 			@Head()
-			@body(currentTab) {
+			<div>
 				{ children... }
-			}
+			</div>
 			<script>
-        document.body.addEventListener('htmx:beforeSwap', function(evt) {
-            if(evt.detail.xhr.status === 422){
-            // allow 422 responses to swap as we are using this as a signal that
-            // a form was submitted with bad data and want to rerender with the
-            // errors
-            //
-            // set isError to false to avoid error logging in console
-            evt.detail.shouldSwap = true;
-            evt.detail.isError = false;
-            } 
+      document.body.addEventListener('htmx:beforeSwap', function(evt) {
+          if(evt.detail.xhr.status === 422){
+          // allow 422 responses to swap as we are using this as a signal that
+          // a form was submitted with bad data and want to rerender with the
+          // errors
+          //
+          // set isError to false to avoid error logging in console
+          evt.detail.shouldSwap = true;
+          evt.detail.isError = false;
+          } 
           });
-
     </script>
 		</html>
+	}
+}
+
+templ Layout(currentTab string) {
+	@wrapWithHeadIfNeeded() {
+		@body(currentTab) {
+			{ children... }
+		}
 	}
 }
 
@@ -130,5 +135,25 @@ templ body(currentTab string) {
 		</div>
 		{ children... }
 		<div id="relogin"></div>
+	</body>
+}
+
+templ NotFound(redirect string) {
+	@wrapWithHeadIfNeeded() {
+		@notFound(redirect)
+	}
+}
+
+templ notFound(redirect string) {
+	<body hx-boost="true">
+		<div class="h-full w-full flex justify-center items-center flex-col gap-2">
+			<h1>Not found</h1>
+			<p>
+				We could not find what you are looking for.
+			</p>
+			@Button(ButtonConfig{Href: redirect}) {
+				Go back
+			}
+		</div>
 	</body>
 }

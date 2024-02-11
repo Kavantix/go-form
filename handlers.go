@@ -15,6 +15,7 @@ import (
 	"github.com/Kavantix/go-form/mails"
 	"github.com/Kavantix/go-form/resources"
 	"github.com/Kavantix/go-form/templates"
+	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -323,6 +324,7 @@ func HandleUploadFile(disk interfaces.Disk) func(c *gin.Context) {
 }
 func HandleResourceIndexStream[T any](resource resources.Resource[T]) func(c *gin.Context) {
 	return func(c *gin.Context) {
+		sentry.StartSpan(c.Request.Context(), "mark", sentry.WithDescription("Start processing")).Finish()
 		startSseStream(c)
 		for i := 1; i <= 10; i++ {
 			rows, err := resource.FetchPage(c.Request.Context(), 0, 10)
@@ -340,15 +342,21 @@ func HandleResourceIndexStream[T any](resource resources.Resource[T]) func(c *gi
 				return
 			default:
 				templateEvent(c, "row", templates.TableRows[T](resource, resource.TableConfig(), rows))
+				sentry.StartSpan(c.Request.Context(), "mark", sentry.WithDescription("Sent first event")).Finish()
 				diff := time.Now().Sub(start)
 				if diff < time.Millisecond*16 {
+					span := sentry.StartSpan(
+						c.Request.Context(),
+						"sleep",
+						sentry.WithDescription("limit throughput"),
+					)
 					time.Sleep(time.Millisecond*16 - diff)
+					span.Finish()
 				}
 			}
 		}
 		sendSseEvent(c, "end", "")
-		// Give browser time to disconnect
-		time.Sleep(time.Millisecond * 100)
+		sentry.StartSpan(c.Request.Context(), "mark", sentry.WithDescription("Sent end event")).Finish()
 	}
 }
 
@@ -377,7 +385,7 @@ func HandleResourceView[T any](resource resources.Resource[T]) func(c *gin.Conte
 		}
 		row, err := resource.FetchRow(c.Request.Context(), id)
 		if err == database.ErrNotFound {
-			c.Status(404)
+			template(c, 404, templates.NotFound(resource.Location(nil)))
 			return
 		}
 		template(c, 200, templates.ResourceView(resource, row, nil))

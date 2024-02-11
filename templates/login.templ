@@ -62,12 +62,14 @@ templ ReloginForm(email, token string, err string) {
 
 templ LoginMessage() {
 	<body hx-boost="true">
-		<h1>Link sent</h1>
-		<p>
-			If the email is known a login link will be generated.
-		</p>
-		<p>
-			Check server log for generated link.
-		</p>
+		<div class="h-full w-full flex justify-center items-center flex-col gap-2">
+			<h1>Link sent</h1>
+			<p>
+				If the email is known a login link will be generated.
+			</p>
+			<p>
+				Check your mailbox for a login link.
+			</p>
+		</div>
 	</body>
 }

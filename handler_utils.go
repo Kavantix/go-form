@@ -17,8 +17,8 @@ func template(c *gin.Context, code int, t templ.Component) {
 		"template.render",
 		sentry.WithDescription(fmt.Sprintf("Template: %+v", t)),
 	)
-	defer span.Finish()
 	err := t.Render(c.Request.Context(), c.Writer)
+	span.Finish()
 	if err != nil {
 		c.AbortWithError(500, fmt.Errorf("failed to render template `%+v`: %w", t, err))
 	}
@@ -37,7 +37,13 @@ func sendSseEvent(c *gin.Context, name string, data string) {
 
 func templateEvent(c *gin.Context, name string, t templ.Component) {
 	fmt.Fprintf(c.Writer, "event: %s\ndata: ", name)
+	span := sentry.StartSpan(
+		c.Request.Context(),
+		"template.render",
+		sentry.WithDescription(fmt.Sprintf("Template: %+v", t)),
+	)
 	t.Render(c.Request.Context(), c.Writer)
+	span.Finish()
 	fmt.Fprint(c.Writer, "\n\n")
 	c.Writer.Flush()
 }
