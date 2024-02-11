@@ -25,9 +25,9 @@ func template(c *gin.Context, code int, t templ.Component) {
 }
 
 func startSseStream(c *gin.Context) {
-	c.Status(200)
 	c.Writer.Header().Set("Cache-Control", "no-store")
 	c.Writer.Header().Set("Content-Type", "text/event-stream")
+	c.Status(200)
 }
 
 func sendSseEvent(c *gin.Context, name string, data string) {
