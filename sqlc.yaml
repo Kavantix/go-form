@@ -5,7 +5,7 @@ sql:
     schema: "migrations"
     gen:
       go:
-        out: "newdatabase"
+        out: "database"
         sql_package: "pgx/v5"
         emit_db_tags: true
         emit_empty_slices: true

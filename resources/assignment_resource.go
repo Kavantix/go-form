@@ -12,26 +12,34 @@ import (
 )
 
 type assignmentResource struct {
+	queries *database.Queries
 }
 
-func NewAssignmentResource() Resource[database.AssignmentRow] {
-	return assignmentResource{}
+func NewAssignmentResource(queries *database.Queries) Resource[database.Assignment] {
+	return assignmentResource{
+		queries: queries,
+	}
 }
 
 func (r assignmentResource) Title() string {
 	return "Assignments"
 }
 
-func (r assignmentResource) FetchPage(ctx context.Context, page, pageSize int) ([]database.AssignmentRow, error) {
-	return database.GetAssignments(page, pageSize)
+func (r assignmentResource) FetchPage(ctx context.Context, page, pageSize int) ([]database.Assignment, error) {
+	return r.queries.GetAssignmentsPage(ctx, page, pageSize)
 }
 
-func (r assignmentResource) FetchRow(ctx context.Context, id int32) (*database.AssignmentRow, error) {
-	return database.GetAssignment(id)
+func (r assignmentResource) FetchRow(ctx context.Context, id int32) (*database.Assignment, error) {
+	assignment, err := r.queries.GetAssignment(ctx, id)
+	if err != nil {
+		return nil, err
+	} else {
+		return &assignment, nil
+	}
 }
 
-func (r assignmentResource) ParseRow(ctx context.Context, id *int, formFields map[string]string) (*database.AssignmentRow, error) {
-	assignment := database.AssignmentRow{}
+func (r assignmentResource) ParseRow(ctx context.Context, id *int, formFields map[string]string) (*database.Assignment, error) {
+	assignment := database.Assignment{}
 	if id != nil {
 		assignment.Id = int32(*id)
 	}
@@ -47,32 +55,37 @@ func (r assignmentResource) ParseRow(ctx context.Context, id *int, formFields ma
 	return &assignment, nil
 }
 
-func (r assignmentResource) CreateRow(ctx context.Context, assignment *database.AssignmentRow) (int32, error) {
-	return database.CreateAssignment(assignment.Name, assignment.Type)
+func (r assignmentResource) CreateRow(ctx context.Context, assignment *database.Assignment) (int32, error) {
+	return r.queries.InsertAssignment(ctx, assignment.Name, assignment.Type)
 }
 
-func (r assignmentResource) UpdateRow(ctx context.Context, assignment *database.AssignmentRow) error {
-	return database.UpdateAssignment(assignment.Id, assignment.Name, assignment.Type)
+func (r assignmentResource) UpdateRow(ctx context.Context, assignment *database.Assignment) error {
+	return r.queries.UpdateAssignment(ctx, database.UpdateAssignmentParams{
+		Id:    assignment.Id,
+		Name:  assignment.Name,
+		Type:  assignment.Type,
+		Order: assignment.Order,
+	})
 }
 
-func (r assignmentResource) FormConfig() FormConfig[database.AssignmentRow] {
-	return FormConfig[database.AssignmentRow]{
-		SaveUrl: func(row *database.AssignmentRow) string {
+func (r assignmentResource) FormConfig() FormConfig[database.Assignment] {
+	return FormConfig[database.Assignment]{
+		SaveUrl: func(row *database.Assignment) string {
 			if row == nil || row.Id == 0 {
 				return "/assignments"
 			} else {
 				return fmt.Sprintf("/assignments/%d", row.Id)
 			}
 		},
-		Fields: [](FormField[database.AssignmentRow]){
-			&components.TextFormFieldConfig[database.AssignmentRow]{
+		Fields: [](FormField[database.Assignment]){
+			&components.TextFormFieldConfig[database.Assignment]{
 				FieldLabel:  "Name",
 				FieldName:   "name",
 				Placeholder: "Enter a name",
 				Required:    true,
-				FieldValue:  func(row *database.AssignmentRow) string { return row.Name },
+				FieldValue:  func(row *database.Assignment) string { return row.Name },
 			},
-			&components.SelectFormFieldConfig[database.AssignmentRow]{
+			&components.SelectFormFieldConfig[database.Assignment]{
 				FieldLabel:  "Type",
 				FieldName:   "type",
 				Placeholder: "Choose a type",
@@ -87,13 +100,13 @@ func (r assignmentResource) FormConfig() FormConfig[database.AssignmentRow] {
 					},
 				},
 				Required:   true,
-				FieldValue: func(row *database.AssignmentRow) string { return row.Type },
+				FieldValue: func(row *database.Assignment) string { return row.Type },
 			},
 		},
 	}
 }
 
-func (r assignmentResource) Location(row *database.AssignmentRow) string {
+func (r assignmentResource) Location(row *database.Assignment) string {
 	if row == nil || row.Id == 0 {
 		return "/assignments"
 	} else {
@@ -101,10 +114,11 @@ func (r assignmentResource) Location(row *database.AssignmentRow) string {
 	}
 }
 
-func (r assignmentResource) TableConfig() [](ColumnConfig[database.AssignmentRow]) {
-	return [](ColumnConfig[database.AssignmentRow]){
-		{Name: "Id", Value: func(user *database.AssignmentRow) string { return strconv.Itoa(int(user.Id)) }},
-		{Name: "Name", Value: func(user *database.AssignmentRow) string { return user.Name }},
-		{Name: "Type", Value: func(user *database.AssignmentRow) string { return user.Type }},
+func (r assignmentResource) TableConfig() [](ColumnConfig[database.Assignment]) {
+	return [](ColumnConfig[database.Assignment]){
+		{Name: "Id", Value: func(user *database.Assignment) string { return strconv.Itoa(int(user.Id)) }},
+		{Name: "Name", Value: func(user *database.Assignment) string { return user.Name }},
+		{Name: "Type", Value: func(user *database.Assignment) string { return user.Type }},
+		{Name: "Order", Value: func(row *database.Assignment) string { return strconv.Itoa(int(row.Order)) }},
 	}
 }

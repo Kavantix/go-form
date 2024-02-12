@@ -14,7 +14,6 @@ import (
 	"github.com/Kavantix/go-form/database"
 	"github.com/Kavantix/go-form/disks"
 	"github.com/Kavantix/go-form/interfaces"
-	"github.com/Kavantix/go-form/newdatabase"
 	"github.com/Kavantix/go-form/resources"
 	"github.com/Kavantix/go-form/templates"
 	"github.com/getsentry/sentry-go"
@@ -130,7 +129,9 @@ func main() {
 		log.Fatal(err)
 	}
 	defer database.Close()
-	// database.Debug()
+	database.Debug(database.DebugOptions{
+		IncludeValues: false,
+	})
 
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
@@ -185,8 +186,8 @@ func main() {
 		hub.Scope().SetUser(sentry.User{
 			ID: strconv.Itoa(int(userId)),
 		})
-		var user *newdatabase.DisplayableUser
-		c.Set("GetUser", func() (*newdatabase.DisplayableUser, error) {
+		var user *database.DisplayableUser
+		c.Set("GetUser", func() (*database.DisplayableUser, error) {
 			if user == nil {
 				*user, err = queries.GetUser(c.Request.Context(), userId)
 				if err != nil {
@@ -197,8 +198,8 @@ func main() {
 		})
 		c.Next()
 	})
-	getUser := func(c *gin.Context) (*newdatabase.DisplayableUser, error) {
-		user, err := c.MustGet("GetUser").(func() (*newdatabase.DisplayableUser, error))()
+	getUser := func(c *gin.Context) (*database.DisplayableUser, error) {
+		user, err := c.MustGet("GetUser").(func() (*database.DisplayableUser, error))()
 		if err != nil {
 			c.AbortWithError(500, err)
 			return nil, err
@@ -225,7 +226,7 @@ func main() {
 		c.Set("Unauthenticated", true)
 	})
 	RegisterResource(authenticated, resources.NewUserResource(queries))
-	RegisterResource(authenticated, resources.NewAssignmentResource())
+	RegisterResource(authenticated, resources.NewAssignmentResource(queries))
 	r.GET("/login", HandleLogin(queries))
 	r.POST("/login", HandlePostLogin(queries))
 	r.GET("/relogin", HandleRelogin(queries))

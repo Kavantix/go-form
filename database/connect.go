@@ -6,20 +6,15 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/Kavantix/go-form/newdatabase"
 	"github.com/getsentry/sentry-go"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	pgxStdlib "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
 )
 
 var (
-	ErrNotFound       = newdatabase.ErrNotFound
-	ErrDuplicateEmail = newdatabase.ErrDuplicateEmail
-
-	db      *sqlx.DB
-	pool    *pgxpool.Pool
-	queries *newdatabase.Queries
+	pool *pgxpool.Pool
 )
 
 type CountResult struct {
@@ -44,7 +39,7 @@ func (s sentryTracer) TraceQueryEnd(ctx context.Context, conn *pgx.Conn, data pg
 	span.Finish()
 }
 
-func Connect(host, port, username, password, database, sslmode string) (*newdatabase.Queries, error) {
+func Connect(host, port, username, password, database, sslmode string) (*Queries, error) {
 	connStr := fmt.Sprintf(
 		"postgres://%s:%s@%s:%s/%s?sslmode=%s",
 		username, password,
@@ -61,17 +56,17 @@ func Connect(host, port, username, password, database, sslmode string) (*newdata
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
-	queries = newdatabase.New(pool)
-	db, err = sqlx.Open("postgres", connStr)
-	if err != nil {
-		pool.Close()
-		return nil, fmt.Errorf("failed to connect to database: %w", err)
-	}
-	db.SetMaxOpenConns(10)
+	queries := New(pool)
 	return queries, nil
 }
 
-func Debug() {
+type DebugOptions struct {
+	IncludeValues bool
+}
+
+func Debug(opts DebugOptions) {
+	db := sqlx.NewDb(pgxStdlib.OpenDB(*pool.Config().ConnConfig), "postgres")
+	defer db.Close()
 	tables := []struct {
 		Name string `db:"tablename"`
 	}{}
@@ -81,7 +76,7 @@ func Debug() {
 	}
 	for _, table := range tables {
 		fmt.Printf("Table: %s\n", table.Name)
-		rows, err := db.Queryx(fmt.Sprintf("select * from \"%s\" limit 10", table.Name))
+		rows, err := db.Queryx(fmt.Sprintf("select * from \"%s\" limit 3", table.Name))
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -93,25 +88,26 @@ func Debug() {
 			fmt.Printf(" %s (%s)\n", column.Name(), column.ScanType())
 		}
 		row := map[string]any{}
-		fmt.Println("  [")
-		for rows.Next() {
-			err := rows.MapScan(row)
-			if err != nil {
-				log.Fatal(err)
-			}
-			fmt.Println("    {")
-			for _, column := range columnTypes {
-				fmt.Printf("     %s: %v\n", column.Name(), row[column.Name()])
+		if opts.IncludeValues {
+			fmt.Println("  [")
+			for rows.Next() {
+				err := rows.MapScan(row)
+				if err != nil {
+					log.Fatal(err)
+				}
+				fmt.Println("    {")
+				for _, column := range columnTypes {
+					fmt.Printf("     %s: %v\n", column.Name(), row[column.Name()])
 
+				}
+				fmt.Println("    }")
 			}
-			fmt.Println("    }")
+			fmt.Println("  ]")
 		}
-		fmt.Println("  ]")
 	}
 
 }
 
 func Close() {
-	db.Close()
 	pool.Close()
 }

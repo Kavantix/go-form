@@ -3,6 +3,7 @@
 create table if not exists assignments (
   id serial primary key,
   name varchar(255) not null,
+  "order" integer not null,
   created_at timestamp default now() not null,
   updated_at timestamp default now() not null,
   "type" varchar(50) not null

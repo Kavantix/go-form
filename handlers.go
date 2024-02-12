@@ -13,7 +13,6 @@ import (
 	"github.com/Kavantix/go-form/database"
 	"github.com/Kavantix/go-form/interfaces"
 	"github.com/Kavantix/go-form/mails"
-	"github.com/Kavantix/go-form/newdatabase"
 	"github.com/Kavantix/go-form/resources"
 	"github.com/Kavantix/go-form/templates"
 	"github.com/getsentry/sentry-go"
@@ -40,10 +39,10 @@ func tryGetUserIdFromCookie(c *gin.Context, allowExpired bool) (int32, error) {
 	return int32(userId), nil
 }
 
-func tryGetUserFromCookie(c *gin.Context, queries *newdatabase.Queries, allowExpired bool) (newdatabase.DisplayableUser, error) {
+func tryGetUserFromCookie(c *gin.Context, queries *database.Queries, allowExpired bool) (database.DisplayableUser, error) {
 	userId, err := tryGetUserIdFromCookie(c, allowExpired)
 	if err != nil {
-		return newdatabase.DisplayableUser{}, err
+		return database.DisplayableUser{}, err
 	}
 	user, err := queries.GetUser(c.Request.Context(), userId)
 	if err != nil {
@@ -52,7 +51,7 @@ func tryGetUserFromCookie(c *gin.Context, queries *newdatabase.Queries, allowExp
 	return user, nil
 }
 
-func HandleRelogin(queries *newdatabase.Queries) func(c *gin.Context) {
+func HandleRelogin(queries *database.Queries) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		user, err := tryGetUserFromCookie(c, queries, true)
 		if err != nil {
@@ -77,7 +76,7 @@ func HandleRelogin(queries *newdatabase.Queries) func(c *gin.Context) {
 	}
 }
 
-func HandlePutRelogin(isProduction bool, queries *newdatabase.Queries) func(c *gin.Context) {
+func HandlePutRelogin(isProduction bool, queries *database.Queries) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		user, err := tryGetUserFromCookie(c, queries, true)
 		if err != nil {
@@ -113,7 +112,7 @@ func HandlePutRelogin(isProduction bool, queries *newdatabase.Queries) func(c *g
 	}
 }
 
-func HandleLogin(queries *newdatabase.Queries) func(c *gin.Context) {
+func HandleLogin(queries *database.Queries) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		email := ""
 		user, err := tryGetUserFromCookie(c, queries, true)
@@ -124,7 +123,7 @@ func HandleLogin(queries *newdatabase.Queries) func(c *gin.Context) {
 	}
 }
 
-func HandlePostLogin(queries *newdatabase.Queries) func(c *gin.Context) {
+func HandlePostLogin(queries *database.Queries) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		email := c.PostForm("email")
 		if email == "" {
@@ -165,7 +164,7 @@ func HandlePostLogin(queries *newdatabase.Queries) func(c *gin.Context) {
 	}
 }
 
-func HandleLoginLink(isProduction bool, queries *newdatabase.Queries) func(c *gin.Context) {
+func HandleLoginLink(isProduction bool, queries *database.Queries) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		tokenString := c.Query("token")
 		if tokenString == "" {

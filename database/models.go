@@ -2,7 +2,7 @@
 // versions:
 //   sqlc v1.25.0
 
-package newdatabase
+package database
 
 import (
 	"time"
@@ -11,6 +11,7 @@ import (
 type Assignment struct {
 	Id        int32     `db:"id"`
 	Name      string    `db:"name"`
+	Order     int32     `db:"order"`
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`
 	Type      string    `db:"type"`
