@@ -11,22 +11,26 @@ import (
 	"github.com/Kavantix/go-form/templates/components"
 )
 
-type AssignmentResource struct {
+type assignmentResource struct {
 }
 
-func (r AssignmentResource) Title() string {
+func NewAssignmentResource() Resource[database.AssignmentRow] {
+	return assignmentResource{}
+}
+
+func (r assignmentResource) Title() string {
 	return "Assignments"
 }
 
-func (r AssignmentResource) FetchPage(ctx context.Context, page, pageSize int) ([]database.AssignmentRow, error) {
+func (r assignmentResource) FetchPage(ctx context.Context, page, pageSize int) ([]database.AssignmentRow, error) {
 	return database.GetAssignments(page, pageSize)
 }
 
-func (r AssignmentResource) FetchRow(ctx context.Context, id int) (*database.AssignmentRow, error) {
+func (r assignmentResource) FetchRow(ctx context.Context, id int32) (*database.AssignmentRow, error) {
 	return database.GetAssignment(id)
 }
 
-func (r AssignmentResource) ParseRow(ctx context.Context, id *int, formFields map[string]string) (*database.AssignmentRow, error) {
+func (r assignmentResource) ParseRow(ctx context.Context, id *int, formFields map[string]string) (*database.AssignmentRow, error) {
 	assignment := database.AssignmentRow{}
 	if id != nil {
 		assignment.Id = int32(*id)
@@ -43,15 +47,15 @@ func (r AssignmentResource) ParseRow(ctx context.Context, id *int, formFields ma
 	return &assignment, nil
 }
 
-func (r AssignmentResource) CreateRow(ctx context.Context, assignment *database.AssignmentRow) (int32, error) {
+func (r assignmentResource) CreateRow(ctx context.Context, assignment *database.AssignmentRow) (int32, error) {
 	return database.CreateAssignment(assignment.Name, assignment.Type)
 }
 
-func (r AssignmentResource) UpdateRow(ctx context.Context, assignment *database.AssignmentRow) error {
+func (r assignmentResource) UpdateRow(ctx context.Context, assignment *database.AssignmentRow) error {
 	return database.UpdateAssignment(assignment.Id, assignment.Name, assignment.Type)
 }
 
-func (r AssignmentResource) FormConfig() FormConfig[database.AssignmentRow] {
+func (r assignmentResource) FormConfig() FormConfig[database.AssignmentRow] {
 	return FormConfig[database.AssignmentRow]{
 		SaveUrl: func(row *database.AssignmentRow) string {
 			if row == nil || row.Id == 0 {
@@ -89,7 +93,7 @@ func (r AssignmentResource) FormConfig() FormConfig[database.AssignmentRow] {
 	}
 }
 
-func (r AssignmentResource) Location(row *database.AssignmentRow) string {
+func (r assignmentResource) Location(row *database.AssignmentRow) string {
 	if row == nil || row.Id == 0 {
 		return "/assignments"
 	} else {
@@ -97,7 +101,7 @@ func (r AssignmentResource) Location(row *database.AssignmentRow) string {
 	}
 }
 
-func (r AssignmentResource) TableConfig() [](ColumnConfig[database.AssignmentRow]) {
+func (r assignmentResource) TableConfig() [](ColumnConfig[database.AssignmentRow]) {
 	return [](ColumnConfig[database.AssignmentRow]){
 		{Name: "Id", Value: func(user *database.AssignmentRow) string { return strconv.Itoa(int(user.Id)) }},
 		{Name: "Name", Value: func(user *database.AssignmentRow) string { return user.Name }},

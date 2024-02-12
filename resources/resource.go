@@ -35,7 +35,7 @@ type ColumnConfig[T any] struct {
 type Resource[T any] interface {
 	Title() string
 	FetchPage(ctx context.Context, page, pageSize int) ([]T, error)
-	FetchRow(ctx context.Context, id int) (*T, error)
+	FetchRow(ctx context.Context, id int32) (*T, error)
 	ParseRow(ctx context.Context, id *int, formFields map[string]string) (*T, error)
 	CreateRow(ctx context.Context, row *T) (int32, error)
 	UpdateRow(ctx context.Context, row *T) error

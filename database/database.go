@@ -14,8 +14,8 @@ import (
 )
 
 var (
-	ErrNotFound       = pgx.ErrNoRows
-	ErrDuplicateEmail = errors.New("email already exists")
+	ErrNotFound       = newdatabase.ErrNotFound
+	ErrDuplicateEmail = newdatabase.ErrDuplicateEmail
 
 	db      *sqlx.DB
 	pool    *pgxpool.Pool
@@ -44,7 +44,7 @@ func (s sentryTracer) TraceQueryEnd(ctx context.Context, conn *pgx.Conn, data pg
 	span.Finish()
 }
 
-func Connect(host, port, username, password, database, sslmode string) error {
+func Connect(host, port, username, password, database, sslmode string) (*newdatabase.Queries, error) {
 	connStr := fmt.Sprintf(
 		"postgres://%s:%s@%s:%s/%s?sslmode=%s",
 		username, password,
@@ -54,20 +54,21 @@ func Connect(host, port, username, password, database, sslmode string) error {
 	var err error
 	config, err := pgxpool.ParseConfig(connStr)
 	if err != nil {
-		return fmt.Errorf("failed to create database config: %w", err)
+		return nil, fmt.Errorf("failed to create database config: %w", err)
 	}
 	config.ConnConfig.Tracer = sentryTracer{}
 	pool, err = pgxpool.NewWithConfig(context.Background(), config)
 	if err != nil {
-		return fmt.Errorf("failed to connect to database: %w", err)
+		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
 	queries = newdatabase.New(pool)
 	db, err = sqlx.Open("postgres", connStr)
 	if err != nil {
-		return fmt.Errorf("failed to connect to database: %w", err)
+		pool.Close()
+		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
 	db.SetMaxOpenConns(10)
-	return nil
+	return queries, nil
 }
 
 func Debug() {

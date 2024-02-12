@@ -14,6 +14,7 @@ import (
 	"github.com/Kavantix/go-form/database"
 	"github.com/Kavantix/go-form/disks"
 	"github.com/Kavantix/go-form/interfaces"
+	"github.com/Kavantix/go-form/newdatabase"
 	"github.com/Kavantix/go-form/resources"
 	"github.com/Kavantix/go-form/templates"
 	"github.com/getsentry/sentry-go"
@@ -117,7 +118,7 @@ func main() {
 	default:
 		log.Fatalf("UPLOAD_DISK '%s' is not supported, supported: (locale/s3)", uploadDisk)
 	}
-	err = database.Connect(
+	queries, err := database.Connect(
 		MustLookupEnv("DB_HOST"),
 		LookupEnv("DB_PORT", "5432"),
 		MustLookupEnv("DB_USERNAME"),
@@ -172,7 +173,7 @@ func main() {
 			}
 		}
 	})
-	r.GET("/loginlink", HandleLoginLink(isProduction))
+	r.GET("/loginlink", HandleLoginLink(isProduction, queries))
 	authenticated := r.Group("", func(c *gin.Context) {
 		userId, err := tryGetUserIdFromCookie(c, false)
 		if err != nil {
@@ -182,12 +183,12 @@ func main() {
 		}
 		hub := sentry.GetHubFromContext(c.Request.Context())
 		hub.Scope().SetUser(sentry.User{
-			ID: strconv.Itoa(userId),
+			ID: strconv.Itoa(int(userId)),
 		})
-		var user *database.UserRow
-		c.Set("GetUser", func() (*database.UserRow, error) {
+		var user *newdatabase.DisplayableUser
+		c.Set("GetUser", func() (*newdatabase.DisplayableUser, error) {
 			if user == nil {
-				*user, err = database.GetUser(c.Request.Context(), userId)
+				*user, err = queries.GetUser(c.Request.Context(), userId)
 				if err != nil {
 					return nil, err
 				}
@@ -196,8 +197,8 @@ func main() {
 		})
 		c.Next()
 	})
-	getUser := func(c *gin.Context) (*database.UserRow, error) {
-		user, err := c.MustGet("GetUser").(func() (*database.UserRow, error))()
+	getUser := func(c *gin.Context) (*newdatabase.DisplayableUser, error) {
+		user, err := c.MustGet("GetUser").(func() (*newdatabase.DisplayableUser, error))()
 		if err != nil {
 			c.AbortWithError(500, err)
 			return nil, err
@@ -223,12 +224,12 @@ func main() {
 		)
 		c.Set("Unauthenticated", true)
 	})
-	RegisterResource(authenticated, resources.UserResource{})
-	RegisterResource(authenticated, resources.AssignmentResource{})
-	r.GET("/login", HandleLogin())
-	r.POST("/login", HandlePostLogin())
-	r.GET("/relogin", HandleRelogin())
-	r.PUT("/relogin", HandlePutRelogin(isProduction))
+	RegisterResource(authenticated, resources.NewUserResource(queries))
+	RegisterResource(authenticated, resources.NewAssignmentResource())
+	r.GET("/login", HandleLogin(queries))
+	r.POST("/login", HandlePostLogin(queries))
+	r.GET("/relogin", HandleRelogin(queries))
+	r.PUT("/relogin", HandlePutRelogin(isProduction, queries))
 
 	r.GET("/", func(c *gin.Context) {
 		c.Redirect(302, "/users")

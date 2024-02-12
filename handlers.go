@@ -13,6 +13,7 @@ import (
 	"github.com/Kavantix/go-form/database"
 	"github.com/Kavantix/go-form/interfaces"
 	"github.com/Kavantix/go-form/mails"
+	"github.com/Kavantix/go-form/newdatabase"
 	"github.com/Kavantix/go-form/resources"
 	"github.com/Kavantix/go-form/templates"
 	"github.com/getsentry/sentry-go"
@@ -20,7 +21,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func tryGetUserIdFromCookie(c *gin.Context, allowExpired bool) (int, error) {
+func tryGetUserIdFromCookie(c *gin.Context, allowExpired bool) (int32, error) {
 	token, err := c.Cookie("goform_auth")
 	if err != nil {
 		return 0, err
@@ -36,24 +37,24 @@ func tryGetUserIdFromCookie(c *gin.Context, allowExpired bool) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	return userId, nil
+	return int32(userId), nil
 }
 
-func tryGetUserFromCookie(c *gin.Context, allowExpired bool) (database.UserRow, error) {
+func tryGetUserFromCookie(c *gin.Context, queries *newdatabase.Queries, allowExpired bool) (newdatabase.DisplayableUser, error) {
 	userId, err := tryGetUserIdFromCookie(c, allowExpired)
 	if err != nil {
-		return database.UserRow{}, err
+		return newdatabase.DisplayableUser{}, err
 	}
-	user, err := database.GetUser(c.Request.Context(), userId)
+	user, err := queries.GetUser(c.Request.Context(), userId)
 	if err != nil {
 		return user, err
 	}
 	return user, nil
 }
 
-func HandleRelogin() func(c *gin.Context) {
+func HandleRelogin(queries *newdatabase.Queries) func(c *gin.Context) {
 	return func(c *gin.Context) {
-		user, err := tryGetUserFromCookie(c, true)
+		user, err := tryGetUserFromCookie(c, queries, true)
 		if err != nil {
 			htmxRedirect(c, "/login")
 			return
@@ -63,7 +64,7 @@ func HandleRelogin() func(c *gin.Context) {
 			c.AbortWithError(500, fmt.Errorf("failed to generate relogin token: %w", err))
 			return
 		}
-		_, err = database.InsertReloginToken(user.Id, token)
+		_, err = queries.InsertReloginToken(c.Request.Context(), user.Id, token)
 		if err != nil {
 			c.AbortWithError(500, fmt.Errorf("failed to save relogin token: %w", err))
 			return
@@ -76,9 +77,9 @@ func HandleRelogin() func(c *gin.Context) {
 	}
 }
 
-func HandlePutRelogin(isProduction bool) func(c *gin.Context) {
+func HandlePutRelogin(isProduction bool, queries *newdatabase.Queries) func(c *gin.Context) {
 	return func(c *gin.Context) {
-		user, err := tryGetUserFromCookie(c, true)
+		user, err := tryGetUserFromCookie(c, queries, true)
 		if err != nil {
 			htmxRedirect(c, "/login")
 			return
@@ -93,7 +94,7 @@ func HandlePutRelogin(isProduction bool) func(c *gin.Context) {
 			return
 		}
 		createdAfter := time.Now().Add(-time.Minute * 5)
-		err = database.ConsumeReloginToken(user.Id, token, createdAfter)
+		err = queries.ConsumeReloginToken(c.Request.Context(), user.Id, token, createdAfter)
 		if err != nil {
 			if errors.Is(err, database.ErrNotFound) {
 				tokenInvalid(c, token)
@@ -112,10 +113,10 @@ func HandlePutRelogin(isProduction bool) func(c *gin.Context) {
 	}
 }
 
-func HandleLogin() func(c *gin.Context) {
+func HandleLogin(queries *newdatabase.Queries) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		email := ""
-		user, err := tryGetUserFromCookie(c, true)
+		user, err := tryGetUserFromCookie(c, queries, true)
 		if err == nil {
 			email = user.Email
 		}
@@ -123,14 +124,14 @@ func HandleLogin() func(c *gin.Context) {
 	}
 }
 
-func HandlePostLogin() func(c *gin.Context) {
+func HandlePostLogin(queries *newdatabase.Queries) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		email := c.PostForm("email")
 		if email == "" {
 			c.AbortWithError(400, fmt.Errorf("email param missing"))
 			return
 		}
-		user, err := database.GetUserByEmail(c.Request.Context(), email)
+		user, err := queries.GetUserByEmail(c.Request.Context(), email)
 		if errors.Is(err, database.ErrNotFound) {
 			c.Error(fmt.Errorf("email %s not found", email))
 			template(c, 200, templates.LoginMessage())
@@ -164,7 +165,7 @@ func HandlePostLogin() func(c *gin.Context) {
 	}
 }
 
-func HandleLoginLink(isProduction bool) func(c *gin.Context) {
+func HandleLoginLink(isProduction bool, queries *newdatabase.Queries) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		tokenString := c.Query("token")
 		if tokenString == "" {
@@ -201,7 +202,7 @@ func HandleLoginLink(isProduction bool) func(c *gin.Context) {
 			c.Set("Unauthenticated", true)
 			return
 		}
-		_, err = database.GetUser(c.Request.Context(), userId)
+		_, err = queries.GetUser(c.Request.Context(), int32(userId))
 		if err != nil {
 			c.Error(fmt.Errorf("No valid user id in claims: %w", err))
 			c.Abort()
@@ -388,7 +389,7 @@ func HandleResourceView[T any](resource resources.Resource[T]) func(c *gin.Conte
 			c.AbortWithError(400, err)
 			return
 		}
-		row, err := resource.FetchRow(c.Request.Context(), id)
+		row, err := resource.FetchRow(c.Request.Context(), int32(id))
 		if err == database.ErrNotFound {
 			template(c, 404, templates.NotFound(resource.Location(nil)))
 			return

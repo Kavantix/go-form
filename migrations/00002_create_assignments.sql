@@ -2,11 +2,10 @@
 -- +goose StatementBegin
 create table if not exists assignments (
   id serial primary key,
-  name varchar(255),
-  "order" integer,
+  name varchar(255) not null,
   created_at timestamp default now() not null,
   updated_at timestamp default now() not null,
-  "type" varchar(50)
+  "type" varchar(50) not null
 );
 CREATE FUNCTION updated_at_trigger() RETURNS trigger
    LANGUAGE plpgsql AS

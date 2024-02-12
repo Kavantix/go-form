@@ -26,7 +26,7 @@ func GetAssignments(page, pageSize int) ([]AssignmentRow, error) {
 	return assignments, nil
 }
 
-func GetAssignment(id int) (*AssignmentRow, error) {
+func GetAssignment(id int32) (*AssignmentRow, error) {
 	assignments := []AssignmentRow{}
 	err := db.Select(&assignments,
 		`select id, name, "order", "type" from assignments where id = $1`,

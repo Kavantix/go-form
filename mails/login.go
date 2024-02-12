@@ -3,12 +3,12 @@ package mails
 import (
 	"fmt"
 
-	"github.com/Kavantix/go-form/database"
+	"github.com/Kavantix/go-form/newdatabase"
 	"github.com/matcornic/hermes/v2"
 )
 
 type LoginMailContent struct {
-	User database.UserRow
+	User newdatabase.DisplayableUser
 	Link string
 }
 
@@ -41,7 +41,7 @@ func Login(content LoginMailContent) *Email {
 }
 
 type ReloginMailContent struct {
-	User  database.UserRow
+	User  newdatabase.DisplayableUser
 	Token string
 }
 

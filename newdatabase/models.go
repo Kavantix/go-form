@@ -6,17 +6,14 @@ package newdatabase
 
 import (
 	"time"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Assignment struct {
-	Id        int32            `db:"id"`
-	Name      pgtype.Text      `db:"name"`
-	Order     pgtype.Int4      `db:"order"`
-	CreatedAt pgtype.Timestamp `db:"created_at"`
-	UpdatedAt pgtype.Timestamp `db:"updated_at"`
-	Type      pgtype.Text      `db:"type"`
+	Id        int32     `db:"id"`
+	Name      string    `db:"name"`
+	CreatedAt time.Time `db:"created_at"`
+	UpdatedAt time.Time `db:"updated_at"`
+	Type      string    `db:"type"`
 }
 
 type DisplayableUser struct {
@@ -27,17 +24,17 @@ type DisplayableUser struct {
 }
 
 type ReloginToken struct {
-	Id        int32            `db:"id"`
-	Token     string           `db:"token"`
-	UserID    int32            `db:"user_id"`
-	CreatedAt pgtype.Timestamp `db:"created_at"`
+	Id        int32     `db:"id"`
+	Token     string    `db:"token"`
+	UserID    int32     `db:"user_id"`
+	CreatedAt time.Time `db:"created_at"`
 }
 
 type User struct {
-	Id          int32            `db:"id"`
-	Email       string           `db:"email"`
-	CreatedAt   pgtype.Timestamp `db:"created_at"`
-	DateOfBirth time.Time        `db:"date_of_birth"`
-	Name        string           `db:"name"`
-	UpdatedAt   pgtype.Timestamp `db:"updated_at"`
+	Id          int32     `db:"id"`
+	Email       string    `db:"email"`
+	CreatedAt   time.Time `db:"created_at"`
+	DateOfBirth time.Time `db:"date_of_birth"`
+	Name        string    `db:"name"`
+	UpdatedAt   time.Time `db:"updated_at"`
 }

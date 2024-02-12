@@ -1,4 +1,4 @@
--- name: GetUsersPage :many
+-- name: getUsersPage :many
 select 
   *
 from displayable_users
@@ -28,16 +28,28 @@ select exists(
     and id != sqlc.arg(excluding_id)
 );
 
--- name: InsertUser :one
+-- name: insertUser :one
 insert into users(
   name,
   email,
   date_of_birth
 ) values ($1, $2, $3) returning id;
 
--- name: UpdateUser :exec
+-- name: updateUser :exec
 update users set
-  name=$1,
-  email=$2,
-  date_of_birth=$3
-where id = $4;
+  name=$2,
+  email=$3,
+  date_of_birth=$4
+where id = $1;
+
+-- name: InsertReloginToken :one
+insert into relogin_tokens (
+  user_id,
+  token
+) values ($1, $2) returning id;
+
+-- name: consumeReloginToken :execrows
+delete from relogin_tokens
+where token = $1
+  and user_id = $2
+  and created_at > sqlc.arg(created_after);

@@ -50,7 +50,52 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (Displayable
 	return i, err
 }
 
-const getUsersPage = `-- name: GetUsersPage :many
+const insertReloginToken = `-- name: InsertReloginToken :one
+insert into relogin_tokens (
+  user_id,
+  token
+) values ($1, $2) returning id
+`
+
+func (q *Queries) InsertReloginToken(ctx context.Context, userID int32, token string) (int32, error) {
+	row := q.db.QueryRow(ctx, insertReloginToken, userID, token)
+	var id int32
+	err := row.Scan(&id)
+	return id, err
+}
+
+const userWithEmailExists = `-- name: UserWithEmailExists :one
+select exists(
+  select
+  from users
+  where email = $1
+    and id != $2
+)
+`
+
+func (q *Queries) UserWithEmailExists(ctx context.Context, email string, excludingID int32) (bool, error) {
+	row := q.db.QueryRow(ctx, userWithEmailExists, email, excludingID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
+const consumeReloginToken = `-- name: consumeReloginToken :execrows
+delete from relogin_tokens
+where token = $1
+  and user_id = $2
+  and created_at > $3
+`
+
+func (q *Queries) consumeReloginToken(ctx context.Context, token string, userID int32, createdAfter time.Time) (int64, error) {
+	result, err := q.db.Exec(ctx, consumeReloginToken, token, userID, createdAfter)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const getUsersPage = `-- name: getUsersPage :many
 select 
   id, name, email, date_of_birth
 from displayable_users
@@ -58,7 +103,7 @@ order by id
 limit $1 offset $2
 `
 
-func (q *Queries) GetUsersPage(ctx context.Context, limit int32, offset int32) ([]DisplayableUser, error) {
+func (q *Queries) getUsersPage(ctx context.Context, limit int32, offset int32) ([]DisplayableUser, error) {
 	rows, err := q.db.Query(ctx, getUsersPage, limit, offset)
 	if err != nil {
 		return nil, err
@@ -83,7 +128,7 @@ func (q *Queries) GetUsersPage(ctx context.Context, limit int32, offset int32) (
 	return items, nil
 }
 
-const insertUser = `-- name: InsertUser :one
+const insertUser = `-- name: insertUser :one
 insert into users(
   name,
   email,
@@ -91,50 +136,34 @@ insert into users(
 ) values ($1, $2, $3) returning id
 `
 
-func (q *Queries) InsertUser(ctx context.Context, name string, email string, dateOfBirth time.Time) (int32, error) {
+func (q *Queries) insertUser(ctx context.Context, name string, email string, dateOfBirth time.Time) (int32, error) {
 	row := q.db.QueryRow(ctx, insertUser, name, email, dateOfBirth)
 	var id int32
 	err := row.Scan(&id)
 	return id, err
 }
 
-const updateUser = `-- name: UpdateUser :exec
+const updateUser = `-- name: updateUser :exec
 update users set
-  name=$1,
-  email=$2,
-  date_of_birth=$3
-where id = $4
+  name=$2,
+  email=$3,
+  date_of_birth=$4
+where id = $1
 `
 
-type UpdateUserParams struct {
+type updateUserParams struct {
+	Id          int32     `db:"id"`
 	Name        string    `db:"name"`
 	Email       string    `db:"email"`
 	DateOfBirth time.Time `db:"date_of_birth"`
-	Id          int32     `db:"id"`
 }
 
-func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
+func (q *Queries) updateUser(ctx context.Context, arg updateUserParams) error {
 	_, err := q.db.Exec(ctx, updateUser,
+		arg.Id,
 		arg.Name,
 		arg.Email,
 		arg.DateOfBirth,
-		arg.Id,
 	)
 	return err
-}
-
-const userWithEmailExists = `-- name: UserWithEmailExists :one
-select exists(
-  select
-  from users
-  where email = $1
-    and id != $2
-)
-`
-
-func (q *Queries) UserWithEmailExists(ctx context.Context, email string, excludingID int32) (bool, error) {
-	row := q.db.QueryRow(ctx, userWithEmailExists, email, excludingID)
-	var exists bool
-	err := row.Scan(&exists)
-	return exists, err
 }
