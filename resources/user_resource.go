@@ -25,10 +25,15 @@ func (r UserResource) FetchPage(ctx context.Context, page, pageSize int) ([]data
 }
 
 func (r UserResource) FetchRow(ctx context.Context, id int) (*database.UserRow, error) {
-	return database.GetUser(ctx, id)
+	user, err := database.GetUser(ctx, id)
+	if err != nil {
+		return nil, err
+	} else {
+		return &user, nil
+	}
 }
 
-func (r UserResource) ParseRow(id *int, formFields map[string]string) (*database.UserRow, error) {
+func (r UserResource) ParseRow(ctx context.Context, id *int, formFields map[string]string) (*database.UserRow, error) {
 	var err error
 	user := database.UserRow{}
 	if id != nil {
@@ -36,7 +41,7 @@ func (r UserResource) ParseRow(id *int, formFields map[string]string) (*database
 	}
 	user.Name = formFields["name"]
 	user.Email = formFields["email"]
-	emailExists, err := database.IsEmailInUse(user.Email, user.Id)
+	emailExists, err := database.IsEmailInUse(ctx, user.Email, user.Id)
 	if err != nil {
 		return &user, fmt.Errorf("failed to check email for duplicates: %w", err)
 	}
@@ -65,12 +70,12 @@ func (r UserResource) ParseRow(id *int, formFields map[string]string) (*database
 	return &user, nil
 }
 
-func (r UserResource) CreateRow(user *database.UserRow) (int, error) {
-	return database.CreateUser(user.Name, user.Email, user.DateOfBirth)
+func (r UserResource) CreateRow(ctx context.Context, user *database.UserRow) (int32, error) {
+	return database.CreateUser(ctx, user.Name, user.Email, user.DateOfBirth)
 }
 
-func (r UserResource) UpdateRow(user *database.UserRow) error {
-	return database.UpdateUser(user.Id, user.Name, user.Email, user.DateOfBirth)
+func (r UserResource) UpdateRow(ctx context.Context, user *database.UserRow) error {
+	return database.UpdateUser(ctx, user.Id, user.Name, user.Email, user.DateOfBirth)
 }
 
 func (r UserResource) FormConfig() FormConfig[database.UserRow] {

@@ -26,7 +26,7 @@ func (r AssignmentResource) FetchRow(ctx context.Context, id int) (*database.Ass
 	return database.GetAssignment(id)
 }
 
-func (r AssignmentResource) ParseRow(id *int, formFields map[string]string) (*database.AssignmentRow, error) {
+func (r AssignmentResource) ParseRow(ctx context.Context, id *int, formFields map[string]string) (*database.AssignmentRow, error) {
 	assignment := database.AssignmentRow{}
 	if id != nil {
 		assignment.Id = int32(*id)
@@ -43,11 +43,11 @@ func (r AssignmentResource) ParseRow(id *int, formFields map[string]string) (*da
 	return &assignment, nil
 }
 
-func (r AssignmentResource) CreateRow(assignment *database.AssignmentRow) (int, error) {
+func (r AssignmentResource) CreateRow(ctx context.Context, assignment *database.AssignmentRow) (int32, error) {
 	return database.CreateAssignment(assignment.Name, assignment.Type)
 }
 
-func (r AssignmentResource) UpdateRow(assignment *database.AssignmentRow) error {
+func (r AssignmentResource) UpdateRow(ctx context.Context, assignment *database.AssignmentRow) error {
 	return database.UpdateAssignment(assignment.Id, assignment.Name, assignment.Type)
 }
 

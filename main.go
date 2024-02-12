@@ -187,7 +187,7 @@ func main() {
 		var user *database.UserRow
 		c.Set("GetUser", func() (*database.UserRow, error) {
 			if user == nil {
-				user, err = database.GetUser(c.Request.Context(), userId)
+				*user, err = database.GetUser(c.Request.Context(), userId)
 				if err != nil {
 					return nil, err
 				}

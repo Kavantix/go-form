@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/Kavantix/go-form/newdatabase"
 	"github.com/getsentry/sentry-go"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -13,11 +14,12 @@ import (
 )
 
 var (
-	ErrNotFound       = errors.New("entry not found")
+	ErrNotFound       = pgx.ErrNoRows
 	ErrDuplicateEmail = errors.New("email already exists")
 
-	db   *sqlx.DB
-	conn *pgxpool.Pool
+	db      *sqlx.DB
+	pool    *pgxpool.Pool
+	queries *newdatabase.Queries
 )
 
 type CountResult struct {
@@ -55,10 +57,11 @@ func Connect(host, port, username, password, database, sslmode string) error {
 		return fmt.Errorf("failed to create database config: %w", err)
 	}
 	config.ConnConfig.Tracer = sentryTracer{}
-	conn, err = pgxpool.NewWithConfig(context.Background(), config)
+	pool, err = pgxpool.NewWithConfig(context.Background(), config)
 	if err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}
+	queries = newdatabase.New(pool)
 	db, err = sqlx.Open("postgres", connStr)
 	if err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
@@ -109,4 +112,5 @@ func Debug() {
 
 func Close() {
 	db.Close()
+	pool.Close()
 }

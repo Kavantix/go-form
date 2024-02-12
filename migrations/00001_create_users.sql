@@ -4,8 +4,8 @@ create table if not exists users (
   id serial primary key,
   email varchar(255) unique not null,
   created_at timestamp default now() not null,
-  date_of_birth date,
-  name varchar(255)
+  date_of_birth date not null,
+  name varchar(255) not null
 );
 
 insert into users(email, name, date_of_birth) values('mail@pietervanloon.com', 'Pieter', '1994-12-14');

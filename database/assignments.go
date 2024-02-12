@@ -41,7 +41,7 @@ func GetAssignment(id int) (*AssignmentRow, error) {
 	return &assignments[0], nil
 }
 
-func CreateAssignment(name, Type string) (int, error) {
+func CreateAssignment(name, Type string) (int32, error) {
 	maxOrder := 0
 	{
 		result := struct {
@@ -54,7 +54,7 @@ func CreateAssignment(name, Type string) (int, error) {
 		maxOrder = int(result.Order.Int32)
 	}
 	result := struct {
-		Id int `db:"id"`
+		Id int32 `db:"id"`
 	}{}
 	err := db.Get(
 		&result,

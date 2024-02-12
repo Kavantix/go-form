@@ -2,20 +2,13 @@ package database
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"github.com/Kavantix/go-form/newdatabase"
 	"strings"
 	"time"
-
-	"github.com/jackc/pgx/v5"
 )
 
-type UserRow struct {
-	Id          int32     `db:"id"`
-	Name        string    `db:"name"`
-	Email       string    `db:"email"`
-	DateOfBirth time.Time `db:"date_of_birth"`
-}
+type UserRow = newdatabase.DisplayableUser
 
 type ReloginTokenRow struct {
 	Id        int32     `db:"id"`
@@ -24,46 +17,12 @@ type ReloginTokenRow struct {
 	CreatedAt time.Time `db:"created_at"`
 }
 
-func GetUser(ctx context.Context, id int) (*UserRow, error) {
-	user := UserRow{}
-	err := conn.QueryRow(ctx, "select id, name, email, date_of_birth from users where id = $1", id).
-		Scan(
-			&user.Id,
-			&user.Name,
-			&user.Email,
-			&user.DateOfBirth,
-		)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrNotFound
-		}
-		return nil, fmt.Errorf("failed to fetch user: %w", err)
-	}
-
-	return &user, nil
+func GetUser(ctx context.Context, id int) (UserRow, error) {
+	return queries.GetUser(ctx, int32(id))
 }
 
-func GetUserByEmail(ctx context.Context, email string) (*UserRow, error) {
-	user := UserRow{}
-	err := conn.QueryRow(ctx, "select id, name, email, date_of_birth from users where email = $1", email).
-		Scan(
-			&user.Id,
-			&user.Name,
-			&user.Email,
-			&user.DateOfBirth,
-		)
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch user by email: %w", err)
-	}
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrNotFound
-		}
-		return nil, fmt.Errorf("failed to fetch user: %w", err)
-	}
-
-	return &user, nil
+func GetUserByEmail(ctx context.Context, email string) (UserRow, error) {
+	return queries.GetUserByEmail(ctx, email)
 }
 
 func InsertReloginToken(userId int32, token string) (int, error) {
@@ -101,66 +60,32 @@ func ConsumeReloginToken(userId int32, token string, createdAfter time.Time) err
 }
 
 func GetUsers(ctx context.Context, page, pageSize int) ([]UserRow, error) {
-	users := []UserRow{}
-	rows, err := conn.Query(ctx,
-		"select id, name, email, date_of_birth from users order by id limit $1 offset $2",
-		pageSize, page,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to query users: %w", err)
+	return queries.GetUsersPage(ctx, int32(pageSize), int32(page*pageSize))
+}
+
+func IsEmailInUse(ctx context.Context, email string, excludeUserId int32) (bool, error) {
+	return queries.UserWithEmailExists(ctx, email, excludeUserId)
+}
+
+func checkDuplicateEmailErr(err error) error {
+	if strings.Contains(err.Error(), `unique constraint "users_email_key"`) {
+		return ErrDuplicateEmail
+	} else {
+		return err
 	}
-	defer rows.Close()
-	tempUser := UserRow{}
-	_, err = pgx.ForEachRow(rows, []any{
-		&tempUser.Id, &tempUser.Name,
-		&tempUser.Email, &tempUser.DateOfBirth,
-	}, func() error {
-		users = append(users, tempUser)
-		return nil
+}
+
+func CreateUser(ctx context.Context, name, email string, dateOfBirth time.Time) (int32, error) {
+	id, err := queries.InsertUser(ctx, name, email, dateOfBirth)
+	return id, checkDuplicateEmailErr(err)
+}
+
+func UpdateUser(ctx context.Context, id int32, name, email string, dateOfBirth time.Time) error {
+	err := queries.UpdateUser(ctx, newdatabase.UpdateUserParams{
+		Id:          id,
+		Name:        name,
+		Email:       email,
+		DateOfBirth: dateOfBirth,
 	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to scan users: %w", err)
-	}
-	return users, nil
-}
-
-func IsEmailInUse(email string, excludeUserId int32) (bool, error) {
-	result := CountResult{}
-	err := db.Get(&result, "select count(*) as count from users where email = $1 and id != $2", email, excludeUserId)
-	if err != nil {
-		return true, err
-	}
-	return result.Count > 0, nil
-}
-
-func CreateUser(name, email string, dateOfBirth time.Time) (int, error) {
-	row := db.QueryRowx(
-		"insert into users(name, email, date_of_birth) values ($1, $2, $3) returning id",
-		name, email, dateOfBirth,
-	)
-	result := struct {
-		Id int `db:"id"`
-	}{}
-	err := row.StructScan(&result)
-	if err != nil {
-		if strings.Contains(err.Error(), `unique constraint "users_email_key"`) {
-			return 0, ErrDuplicateEmail
-		}
-		return 0, fmt.Errorf("failed to insert user: %w", err)
-	}
-	return result.Id, nil
-}
-
-func UpdateUser(id int32, name, email string, dateOfBirth time.Time) error {
-	_, err := db.Exec(
-		"update users set name=$1, email=$2, date_of_birth=$3 where id = $4",
-		name, email, dateOfBirth, id,
-	)
-	if err != nil {
-		if strings.Contains(err.Error(), `unique constraint "users_email_key"`) {
-			return ErrDuplicateEmail
-		}
-		return fmt.Errorf("failed to insert user: %w", err)
-	}
-	return nil
+	return checkDuplicateEmailErr(err)
 }

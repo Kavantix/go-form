@@ -8,7 +8,7 @@ import (
 )
 
 type LoginMailContent struct {
-	User *database.UserRow
+	User database.UserRow
 	Link string
 }
 
@@ -41,7 +41,7 @@ func Login(content LoginMailContent) *Email {
 }
 
 type ReloginMailContent struct {
-	User  *database.UserRow
+	User  database.UserRow
 	Token string
 }
 

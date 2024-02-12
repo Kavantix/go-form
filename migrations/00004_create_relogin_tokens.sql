@@ -2,8 +2,8 @@
 -- +goose StatementBegin
 create table if not exists relogin_tokens (
   id serial primary key,
-  token varchar(6),
-  user_id serial references users(id),
+  token varchar(6) not null,
+  user_id serial references users(id) not null,
   created_at timestamp default now() not null
 );
 create index relogin_tokens_user_id_token on relogin_tokens (user_id, token, created_at);

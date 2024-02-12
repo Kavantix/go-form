@@ -39,14 +39,14 @@ func tryGetUserIdFromCookie(c *gin.Context, allowExpired bool) (int, error) {
 	return userId, nil
 }
 
-func tryGetUserFromCookie(c *gin.Context, allowExpired bool) (*database.UserRow, error) {
+func tryGetUserFromCookie(c *gin.Context, allowExpired bool) (database.UserRow, error) {
 	userId, err := tryGetUserIdFromCookie(c, allowExpired)
 	if err != nil {
-		return nil, err
+		return database.UserRow{}, err
 	}
 	user, err := database.GetUser(c.Request.Context(), userId)
 	if err != nil {
-		return nil, err
+		return user, err
 	}
 	return user, nil
 }
@@ -326,8 +326,11 @@ func HandleResourceIndexStream[T any](resource resources.Resource[T]) func(c *gi
 	return func(c *gin.Context) {
 		sentry.StartSpan(c.Request.Context(), "mark", sentry.WithDescription("Start processing")).Finish()
 		startSseStream(c)
-		for i := 1; i <= 10; i++ {
-			rows, err := resource.FetchPage(c.Request.Context(), 0, 10)
+		hasNextPage := true
+		page := 0
+		pageSize := 4
+		for hasNextPage {
+			rows, err := resource.FetchPage(c.Request.Context(), page, pageSize)
 			if err != nil {
 				if !errors.Is(err, context.Canceled) {
 					c.Error(err)
@@ -335,6 +338,8 @@ func HandleResourceIndexStream[T any](resource resources.Resource[T]) func(c *gi
 				c.Abort()
 				return
 			}
+			page += 1
+			hasNextPage = len(rows) == pageSize
 			start := time.Now()
 			select {
 			case <-c.Request.Context().Done():
@@ -411,7 +416,7 @@ func HandleValidateResource[T any](resource resources.Resource[T]) func(c *gin.C
 			fieldName := field.Name()
 			formFields[fieldName] = c.Query(fieldName)
 		}
-		_, err = resource.ParseRow(id, formFields)
+		_, err = resource.ParseRow(c.Request.Context(), id, formFields)
 		if err != nil {
 			if validationErr, isValidationErr := err.(resources.ValidationError); isValidationErr {
 				validationErrors := map[string]string{}
@@ -446,7 +451,7 @@ func HandleCreateResource[T any](resource resources.Resource[T]) func(c *gin.Con
 			fieldName := field.Name()
 			formFields[fieldName] = c.PostForm(fieldName)
 		}
-		row, err := resource.ParseRow(nil, formFields)
+		row, err := resource.ParseRow(c.Request.Context(), nil, formFields)
 		if err != nil {
 			if validationErr, ok := err.(resources.ValidationError); ok {
 				validationErrors := map[string]string{}
@@ -464,7 +469,7 @@ func HandleCreateResource[T any](resource resources.Resource[T]) func(c *gin.Con
 			}
 
 		}
-		id, err := resource.CreateRow(row)
+		id, err := resource.CreateRow(c.Request.Context(), row)
 		if err != nil {
 			if err == database.ErrDuplicateEmail {
 				validationErrors := map[string]string{}
@@ -497,7 +502,7 @@ func HandleUpdateResource[T any](resource resources.Resource[T]) func(c *gin.Con
 			fieldName := field.Name()
 			formFields[fieldName] = c.PostForm(fieldName)
 		}
-		row, err := resource.ParseRow(&id, formFields)
+		row, err := resource.ParseRow(c.Request.Context(), &id, formFields)
 		if err != nil {
 			if validationErr, ok := err.(resources.ValidationError); ok {
 				validationErrors := map[string]string{}
@@ -515,7 +520,7 @@ func HandleUpdateResource[T any](resource resources.Resource[T]) func(c *gin.Con
 			}
 
 		}
-		err = resource.UpdateRow(row)
+		err = resource.UpdateRow(c.Request.Context(), row)
 		if err != nil {
 			if err == database.ErrDuplicateEmail {
 				validationErrors := map[string]string{}
