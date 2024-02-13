@@ -27,11 +27,6 @@ func (e ParsingError) Error() string {
 	return fmt.Sprintf("Parsing of field '%s' failed with error: %s", e.FieldName, e.Reason.Error())
 }
 
-type ColumnConfig[T any] struct {
-	Name  string
-	Value func(row *T) string
-}
-
 type Resource[T any] interface {
 	Title() string
 	FetchPage(ctx context.Context, page, pageSize int) ([]T, error)
@@ -39,7 +34,17 @@ type Resource[T any] interface {
 	ParseRow(ctx context.Context, id *int, formFields map[string]string) (*T, error)
 	CreateRow(ctx context.Context, row *T) (int32, error)
 	UpdateRow(ctx context.Context, row *T) error
-	TableConfig() [](ColumnConfig[T])
+	TableConfig() TableConfig[T]
 	FormConfig() FormConfig[T]
 	Location(row *T) string
+}
+
+func NewResourceTableConfig[T any](resource Resource[T]) TableConfigBuilder[T] {
+	return NewTableConfig[T](func(row T) string { return resource.Location(&row) }).
+		WithTitle(resource.Title()).
+		WithStreamUrl(fmt.Sprintf("%s/stream", resource.Location(nil))).
+		WithCreate(
+			fmt.Sprintf("Add %s", resource.Title()),
+			fmt.Sprintf("%s/create", resource.Location(nil)),
+		)
 }

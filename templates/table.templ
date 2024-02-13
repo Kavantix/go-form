@@ -1,33 +1,30 @@
 package templates
 
 import (
-	"fmt"
-	"github.com/Kavantix/go-form/resources"
 	"github.com/Kavantix/go-form/templates/components"
+	. "github.com/Kavantix/go-form/interfaces"
 )
 
-templ Table[T any](resource resources.Resource[T], rows []T) {
-	@table(resource, resource.TableConfig(), rows)
-}
-
-templ table[T any](resource resources.Resource[T], columns [](resources.ColumnConfig[T]), rows []T) {
+templ Table[T any](config TableConfig[T], rows []T) {
 	<div class="pb-4 px-4 rounded-md w-full">
 		<div class="flex justify-between items-center w-full pt-6 ">
 			<h1 class="mx-4 text-xl flex items-center gap-2">
-				{ resource.Title() }
-				<div
-					class="loader inline-block"
-					hx-ext="sse"
-					sse-connect={ fmt.Sprintf("%s/stream", resource.Location(nil)) }
-					sse-swap="end"
-					hx-target="this"
-					hx-swap="delete"
-				>
-					<div sse-swap="row" hx-target="next tbody" hx-swap="beforeend"></div>
-				</div>
+				{ config.Title() }
+				if len(rows) == 0 && config.StreamUrl() != "" {
+					<div
+						class="loader inline-block"
+						hx-ext="sse"
+						sse-connect={ config.StreamUrl() }
+						sse-swap="end"
+						hx-target="this"
+						hx-swap="delete"
+					>
+						<div sse-swap="row" hx-target="next tbody" hx-swap="beforeend"></div>
+					</div>
+				}
 			</h1>
-			@components.Button(components.ButtonConfig{Href: resource.Location(nil)+"/create"}) {
-				Add { resource.Title() }
+			@components.Button(components.ButtonConfig{Href: config.CreateUrl()}) {
+				{ config.CreateLabel() }
 			}
 		</div>
 		<div class="w-full flex justify-start px-2 mt-2">
@@ -37,33 +34,35 @@ templ table[T any](resource resources.Resource[T], columns [](resources.ColumnCo
 				>
 					<thead>
 						<tr style="font-size: 0.9674rem">
-							for _, column := range columns {
-								<th class="px-4 py-2 ">{ column.Name }</th>
+							for _, column := range config.Columns() {
+								<th class="px-4 py-2 ">{ column.Label }</th>
 							}
 						</tr>
 					</thead>
-					<tbody></tbody>
+					<tbody>
+						@TableRows(config, rows)
+					</tbody>
 				</table>
 			</div>
 		</div>
 	</div>
 }
 
-templ TableRows[T any](resource resources.Resource[T], columns [](resources.ColumnConfig[T]), rows []T) {
+templ TableRows[T any](config TableConfig[T], rows []T) {
 	for _, row := range rows {
-		@TableRow(resource, columns, row)
+		@TableRow(config, row)
 	}
 }
 
-templ TableRow[T any](resource resources.Resource[T], columns [](resources.ColumnConfig[T]), row T) {
+templ TableRow[T any](config TableConfig[T], row T) {
 	<tr
-		hx-get={ resource.Location(&row) }
+		hx-get={ config.RowUrl(row) }
 		hx-target="body"
 		hx-push-url="true"
 		class="cursor-pointer hover fade-in"
 	>
-		for _, column := range columns {
-			<td class="py-0 px-4"><div class="py-4">{ fmt.Sprintf("%v", column.Value(&row)) }</div></td>
+		for _, column := range config.Columns() {
+			<td class="py-0 px-4"><div class="py-4">{ column.Value(row) }</div></td>
 		}
 	</tr>
 }

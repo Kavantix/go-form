@@ -12,13 +12,24 @@ import (
 )
 
 type assignmentResource struct {
-	queries *database.Queries
+	queries     *database.Queries
+	tableConfig TableConfig[database.Assignment]
 }
 
 func NewAssignmentResource(queries *database.Queries) Resource[database.Assignment] {
-	return assignmentResource{
+	r := assignmentResource{
 		queries: queries,
 	}
+	r.tableConfig = NewResourceTableConfig(&r).
+		WithColumns([]ColumnConfig[database.Assignment]{
+			{Label: "Id", Value: func(user database.Assignment) string { return strconv.Itoa(int(user.Id)) }},
+			{Label: "Name", Value: func(user database.Assignment) string { return user.Name }},
+			{Label: "Type", Value: func(user database.Assignment) string { return user.Type }},
+			{Label: "Order", Value: func(row database.Assignment) string { return strconv.Itoa(int(row.Order)) }},
+		}).
+		Build()
+
+	return r
 }
 
 func (r assignmentResource) Title() string {
@@ -114,11 +125,6 @@ func (r assignmentResource) Location(row *database.Assignment) string {
 	}
 }
 
-func (r assignmentResource) TableConfig() [](ColumnConfig[database.Assignment]) {
-	return [](ColumnConfig[database.Assignment]){
-		{Name: "Id", Value: func(user *database.Assignment) string { return strconv.Itoa(int(user.Id)) }},
-		{Name: "Name", Value: func(user *database.Assignment) string { return user.Name }},
-		{Name: "Type", Value: func(user *database.Assignment) string { return user.Type }},
-		{Name: "Order", Value: func(row *database.Assignment) string { return strconv.Itoa(int(row.Order)) }},
-	}
+func (r assignmentResource) TableConfig() TableConfig[database.Assignment] {
+	return r.tableConfig
 }

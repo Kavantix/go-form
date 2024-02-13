@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/rand"
 	"net/url"
 	"strconv"
 	"strings"
@@ -346,7 +347,9 @@ func HandleResourceIndexStream[T any](resource resources.Resource[T]) func(c *gi
 				// "Stream cancelled"
 				return
 			default:
-				templateEvent(c, "row", templates.TableRows[T](resource, resource.TableConfig(), rows))
+				templateEvent(c, "row",
+					templates.TableRows[T](resource.TableConfig(), rows),
+				)
 				sentry.StartSpan(c.Request.Context(), "mark", sentry.WithDescription("Sent first event")).Finish()
 				diff := time.Now().Sub(start)
 				if diff < time.Millisecond*16 {
@@ -367,17 +370,24 @@ func HandleResourceIndexStream[T any](resource resources.Resource[T]) func(c *gi
 
 func HandleResourceIndex[T any](resource resources.Resource[T]) func(c *gin.Context) {
 	return func(c *gin.Context) {
-		// page, pageSize, err := paginationParams(c)
-		// if err != nil {
-		// 	c.AbortWithError(400, err)
-		// 	return
-		// }
-		// rows, err := resource.FetchPage(page, pageSize)
-		// if err != nil {
-		// 	c.AbortWithError(500, err)
-		// 	return
-		// }
-		template(c, 200, templates.ResourceOverview(resource, []T{}))
+		page, pageSize, err := paginationParams(c)
+		if err != nil {
+			c.AbortWithError(400, err)
+			return
+		}
+		ctx, cancel := context.WithTimeout(c.Request.Context(), time.Millisecond*5)
+		defer cancel()
+		delay := time.Microsecond * time.Duration(rand.Float32()*5000)
+		time.Sleep(delay)
+		rows, err := resource.FetchPage(
+			ctx,
+			page, pageSize,
+		)
+		if err != nil && !errors.Is(err, context.DeadlineExceeded) {
+			c.AbortWithError(500, err)
+			return
+		}
+		template(c, 200, templates.ResourceOverview(resource, rows))
 	}
 }
 

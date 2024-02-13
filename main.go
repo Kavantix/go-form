@@ -129,9 +129,9 @@ func main() {
 		log.Fatal(err)
 	}
 	defer database.Close()
-	database.Debug(database.DebugOptions{
-		IncludeValues: false,
-	})
+	// database.Debug(database.DebugOptions{
+	// 	IncludeValues: false,
+	// })
 
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()

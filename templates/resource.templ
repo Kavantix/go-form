@@ -5,7 +5,7 @@ import "github.com/Kavantix/go-form/templates/components"
 
 templ ResourceOverview[T any](resource resources.Resource[T], rows []T) {
 	@Layout(resource.Location(nil)) {
-		@Table(resource, rows)
+		@Table(resource.TableConfig(), rows)
 	}
 }
 

@@ -105,7 +105,6 @@ func Debug(opts DebugOptions) {
 			fmt.Println("  ]")
 		}
 	}
-
 }
 
 func Close() {

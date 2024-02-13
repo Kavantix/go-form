@@ -14,13 +14,25 @@ import (
 )
 
 type userResource struct {
-	queries *database.Queries
+	queries     *database.Queries
+	tableConfig TableConfig[database.DisplayableUser]
 }
 
 func NewUserResource(queries *database.Queries) Resource[database.DisplayableUser] {
-	return userResource{
+	r := userResource{
 		queries: queries,
 	}
+	r.tableConfig = NewResourceTableConfig(&r).
+		WithColumns([](ColumnConfig[database.DisplayableUser]){
+			{Label: "Id", Value: func(user database.DisplayableUser) string { return strconv.Itoa(int(user.Id)) }},
+			{Label: "Name", Value: func(user database.DisplayableUser) string { return user.Name }},
+			{Label: "Email", Value: func(user database.DisplayableUser) string { return user.Email }},
+			{Label: "Age", Value: func(user database.DisplayableUser) string {
+				return fmt.Sprintf("%d years", age.Age(user.DateOfBirth))
+			}},
+		}).
+		Build()
+	return r
 }
 
 func (r userResource) Title() string {
@@ -135,13 +147,6 @@ func (r userResource) Location(row *database.DisplayableUser) string {
 	}
 }
 
-func (r userResource) TableConfig() [](ColumnConfig[database.DisplayableUser]) {
-	return [](ColumnConfig[database.DisplayableUser]){
-		{Name: "Id", Value: func(user *database.DisplayableUser) string { return strconv.Itoa(int(user.Id)) }},
-		{Name: "Name", Value: func(user *database.DisplayableUser) string { return user.Name }},
-		{Name: "Email", Value: func(user *database.DisplayableUser) string { return user.Email }},
-		{Name: "Age", Value: func(user *database.DisplayableUser) string {
-			return fmt.Sprintf("%d years", age.Age(user.DateOfBirth))
-		}},
-	}
+func (r userResource) TableConfig() TableConfig[database.DisplayableUser] {
+	return r.tableConfig
 }
