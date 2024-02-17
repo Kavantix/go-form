@@ -16,8 +16,8 @@ var FrontendSentryDSN string
 
 func initSentry(dsn string) templ.ComponentScript {
 	return templ.ComponentScript{
-		Name: `__templ_initSentry_393b`,
-		Function: `function __templ_initSentry_393b(dsn){Sentry.init({
+		Name: `__templ_initSentry_3ca5`,
+		Function: `function __templ_initSentry_3ca5(dsn){Sentry.init({
     dsn: dsn,
 
     // Alternatively, use ` + "`" + `process.env.npm_package_version` + "`" + ` for a dynamic release version
@@ -31,13 +31,13 @@ func initSentry(dsn string) templ.ComponentScript {
     // Set tracesSampleRate to 1.0 to capture 100%
     // of transactions for performance monitoring.
     // We recommend adjusting this value in production
-    tracesSampleRate: 1.0,
+    tracesSampleRate: 0.1,
 
     // Set ` + "`" + `tracePropagationTargets` + "`" + ` to control for which URLs distributed tracing should be enabled
     tracePropagationTargets: ["http://go-form.test", , /^\//],
   });}`,
-		Call:       templ.SafeScript(`__templ_initSentry_393b`, dsn),
-		CallInline: templ.SafeScriptInline(`__templ_initSentry_393b`, dsn),
+		Call:       templ.SafeScript(`__templ_initSentry_3ca5`, dsn),
+		CallInline: templ.SafeScriptInline(`__templ_initSentry_3ca5`, dsn),
 	}
 }
 

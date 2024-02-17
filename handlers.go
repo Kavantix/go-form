@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math/rand"
 	"net/url"
 	"strconv"
 	"strings"
@@ -329,7 +328,7 @@ func HandleResourceIndexStream[T any](resource resources.Resource[T]) func(c *gi
 		startSseStream(c)
 		hasNextPage := true
 		page := 0
-		pageSize := 4
+		pageSize := 5
 		for hasNextPage {
 			rows, err := resource.FetchPage(c.Request.Context(), page, pageSize)
 			if err != nil {
@@ -375,10 +374,8 @@ func HandleResourceIndex[T any](resource resources.Resource[T]) func(c *gin.Cont
 			c.AbortWithError(400, err)
 			return
 		}
-		ctx, cancel := context.WithTimeout(c.Request.Context(), time.Millisecond*5)
+		ctx, cancel := context.WithTimeout(c.Request.Context(), time.Millisecond*20)
 		defer cancel()
-		delay := time.Microsecond * time.Duration(rand.Float32()*5000)
-		time.Sleep(delay)
 		rows, err := resource.FetchPage(
 			ctx,
 			page, pageSize,
