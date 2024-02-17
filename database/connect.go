@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"time"
 
 	"github.com/getsentry/sentry-go"
 	"github.com/jackc/pgx/v5"
@@ -62,10 +61,8 @@ type sentryTracer struct {
 func startQuerySpan(ctx context.Context, sql string, isExecute bool) *sentry.Span {
 	var span *sentry.Span
 	if isExecute {
-		fmt.Printf("Starting execute query: %v,\n", time.Now())
 		span = sentry.StartSpan(ctx, "db.sql.execute")
 	} else {
-		fmt.Printf("Starting query: %v,\n", time.Now())
 		span = sentry.StartSpan(ctx, "db.sql.query")
 	}
 	span.SetData("db.system", "postgresql")
@@ -87,7 +84,6 @@ func (s sentryTracer) TraceQueryEnd(ctx context.Context, conn *pgx.Conn, data pg
 			span.Status = sentry.SpanStatusInternalError
 		}
 	}
-	fmt.Printf("Finish query: %v\n", time.Now())
 	span.Finish()
 }
 

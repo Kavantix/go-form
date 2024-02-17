@@ -1,0 +1,10 @@
+.git
+keys
+storage
+.env
+example.env
+.DS_Store
+.gitignore
+go-form
+*.Dockerfile
+sqlc.yaml

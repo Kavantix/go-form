@@ -2,10 +2,15 @@ package main
 
 import (
 	"context"
+	"embed"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"io/fs"
 	"log"
+	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -14,6 +19,7 @@ import (
 	"github.com/Kavantix/go-form/database"
 	"github.com/Kavantix/go-form/disks"
 	"github.com/Kavantix/go-form/interfaces"
+	"github.com/Kavantix/go-form/mails"
 	"github.com/Kavantix/go-form/resources"
 	"github.com/Kavantix/go-form/templates"
 	"github.com/getsentry/sentry-go"
@@ -24,6 +30,9 @@ import (
 
 	_ "github.com/lib/pq"
 )
+
+//go:embed public/js
+var publicJsFs embed.FS
 
 func RegisterResource[T any](e *gin.RouterGroup, resource resources.Resource[T]) {
 	r := e.Group(resource.Location(nil))
@@ -71,6 +80,7 @@ func InitSentry() error {
 }
 
 func main() {
+	log.Println("Starting...")
 	isProduction := false
 	err := godotenv.Load()
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
@@ -83,8 +93,11 @@ func main() {
 
 	err = auth.LoadKeys(MustLookupEnv("PRIVATE_KEY"), MustLookupEnv("PUBLIC_KEY"))
 	if err != nil {
-		log.Fatalf("Failed ot load keys:\n%s\n", err)
+		log.Fatalf("Failed to load keys:\n%s\n", err)
 	}
+
+	mailhogHost := MustLookupEnv("MAILHOG_HOST")
+	err = mails.Init(mailhogHost)
 
 	var disk interfaces.Disk
 	uploadDisk := LookupEnv("UPLOAD_DISK", "local")
@@ -126,7 +139,7 @@ func main() {
 		MustLookupEnv("DB_SSLMODE"),
 	)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to connect to database: %s\n", err)
 	}
 	defer database.Close()
 	// database.Debug(database.DebugOptions{
@@ -134,6 +147,7 @@ func main() {
 	// })
 
 	gin.SetMode(gin.ReleaseMode)
+	log.Println("Configuring routes...")
 	r := gin.Default()
 	r.Use(sentrygin.New(sentrygin.Options{
 		Repanic: true,
@@ -141,7 +155,8 @@ func main() {
 	r.SetTrustedProxies([]string{})
 	r.Use(gzip.Gzip(gzip.BestSpeed))
 	r.Static("/storage", "./storage/public/")
-	r.Static("/js", "./public/js/")
+	jsDir, err := fs.Sub(publicJsFs, "public/js")
+	r.StaticFS("/js", http.FS(jsDir))
 	r.Use(func(c *gin.Context) {
 		isHtmx := c.GetHeader("HX-Request") == "true"
 		ctx := context.WithValue(c.Request.Context(), "isHtmx", isHtmx)
@@ -239,6 +254,34 @@ func main() {
 		template(c, 404, templates.NotFound("/users"))
 	})
 
-	fmt.Println("Listening op port 80")
-	r.Run("0.0.0.0:80") // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
+	port := LookupEnv("PORT", "80")
+	log.Printf("Listening op port %s\n", port)
+	mailhogUrl, err := url.Parse(fmt.Sprintf("http://%s:8025", mailhogHost))
+	if err != nil {
+		log.Fatalf("Failed to construct mailhog url: %s\n", err)
+	}
+	mailhogProxy := httputil.NewSingleHostReverseProxy(mailhogUrl)
+	ginHandler := r.Handler()
+	mailhogUser := MustLookupEnv("MAILHOG_USER")
+	mailhogPassword := MustLookupEnv("MAILHOG_PASSWORD")
+	http.ListenAndServe(fmt.Sprintf(":%s", port), http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/mailhog") {
+			authHeader := r.Header.Get("Authorization")
+			if strings.HasPrefix(authHeader, "Basic ") {
+				encoded := authHeader[6:]
+				decoded, err := base64.StdEncoding.DecodeString(encoded)
+				if err == nil {
+					parts := strings.SplitN(string(decoded), ":", 2)
+					if len(parts) == 2 && parts[0] == mailhogUser && parts[1] == mailhogPassword {
+						mailhogProxy.ServeHTTP(w, r)
+						return
+					}
+				}
+			}
+			w.Header().Add("WWW-Authenticate", "Basic")
+			w.WriteHeader(401)
+		} else {
+			ginHandler.ServeHTTP(w, r)
+		}
+	}))
 }

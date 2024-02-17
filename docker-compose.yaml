@@ -3,6 +3,7 @@ services:
   server:
     build:
       context: .
+      dockerfile: dev.Dockerfile
     volumes:
       - .:/go/src/app
     environment:
@@ -26,6 +27,7 @@ services:
     environment:
       VIRTUAL_HOST: mailhog.go-form.test
       VIRTUAL_PORT: "8025"
+      MH_UI_WEB_PATH: mailhog
 
 volumes:
   db:

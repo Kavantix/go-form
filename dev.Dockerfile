@@ -6,4 +6,4 @@ WORKDIR /go/src/app
 COPY go.mod go.sum ./
 RUN go mod download
 
-CMD gow -r=false -e=go,mod,html,env run .
+CMD gow -v -r=false -e=go,mod,html,env run .

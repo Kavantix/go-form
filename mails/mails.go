@@ -21,10 +21,10 @@ type Email struct {
 
 var mailClient *mail.Client
 
-func init() {
+func Init(mailhogHost string) error {
 	var err error
 	mailClient, err = mail.NewClient(
-		"mailhog",
+		mailhogHost,
 		// mail.WithPort(25),
 		mail.WithPort(1025),
 		// mail.WithSMTPAuth(mail.SMTPAuthPlain),
@@ -33,8 +33,9 @@ func init() {
 		mail.WithTLSPolicy(mail.NoTLS),
 	)
 	if err != nil {
-		log.Fatalf("failed to create mail client: %s", err)
+		return fmt.Errorf("failed to create mail client: %w", err)
 	}
+	return nil
 }
 
 func (message *Email) SendTo(ctx context.Context, toEmail string, ccEmails ...string) error {
