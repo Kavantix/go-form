@@ -26,7 +26,7 @@ func (q *Queries) ConsumeReloginToken(ctx context.Context, userId int32, token s
 }
 
 func checkDuplicateEmailErr(err error) error {
-	if strings.Contains(err.Error(), `unique constraint "users_email_key"`) {
+	if err != nil && strings.Contains(err.Error(), `unique constraint "users_email_key"`) {
 		return ErrDuplicateEmail
 	} else {
 		return err
@@ -34,7 +34,7 @@ func checkDuplicateEmailErr(err error) error {
 }
 
 func (q *Queries) InsertUser(ctx context.Context, name, email string, dateOfBirth time.Time) (int32, error) {
-	id, err := q.InsertUser(ctx, name, email, dateOfBirth)
+	id, err := q.insertUser(ctx, name, email, dateOfBirth)
 	return id, checkDuplicateEmailErr(err)
 }
 
