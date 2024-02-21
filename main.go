@@ -1,27 +1,14 @@
 package main
 
 import (
-	"context"
-	"embed"
 	"errors"
 	"fmt"
 	"io/fs"
 	"log"
-	"net/http"
-	"net/http/httputil"
-	"net/url"
-	"os"
-	"strconv"
-	"strings"
 
 	"github.com/Kavantix/go-form/auth"
 	"github.com/Kavantix/go-form/database"
-	"github.com/Kavantix/go-form/disks"
-	"github.com/Kavantix/go-form/interfaces"
 	"github.com/Kavantix/go-form/mails"
-	"github.com/Kavantix/go-form/resources"
-	"github.com/Kavantix/go-form/templates"
-	"github.com/getsentry/sentry-go"
 	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
@@ -30,57 +17,9 @@ import (
 	_ "github.com/lib/pq"
 )
 
-//go:embed public/js
-var publicJsFs embed.FS
-
-func RegisterResource[T any](e *gin.RouterGroup, resource resources.Resource[T]) {
-	r := e.Group(resource.Location(nil))
-	r.GET("", HandleResourceIndex(resource))
-	r.GET("/stream", HandleResourceIndexStream(resource))
-	r.GET("/:id", HandleResourceView(resource))
-	r.GET("/:id/validate", HandleValidateResource(resource))
-	r.GET("/create", HandleResourceCreate(resource))
-	r.GET("/validate", HandleValidateResource(resource))
-	r.POST("", HandleCreateResource(resource))
-	r.POST("/:id", HandleUpdateResource(resource))
-}
-
-func MustLookupEnv(key string) string {
-	value, exists := os.LookupEnv(key)
-	value = strings.TrimSpace(value)
-	if !exists || value == "" {
-		log.Fatalf("Env variable '%s' is required", key)
-	}
-	return value
-}
-
-func LookupEnv(key, fallback string) string {
-	value, exists := os.LookupEnv(key)
-	value = strings.TrimSpace(value)
-	if !exists || value == "" {
-		return fallback
-	}
-	return value
-}
-
-func InitSentry() error {
-	templates.FrontendSentryDSN = MustLookupEnv("FRONTEND_SENTRY_DSN")
-	err := sentry.Init(sentry.ClientOptions{
-		Dsn:                MustLookupEnv("SENTRY_DSN"),
-		TracesSampleRate:   1.0,
-		EnableTracing:      true,
-		ProfilesSampleRate: 1.0,
-		Environment:        "local",
-	})
-	if err != nil {
-		return fmt.Errorf("sentry.Init: %s", err)
-	}
-	return nil
-}
-
 func main() {
 	log.Println("Starting...")
-	isProduction := false
+	isProduction := IsProduction(LookupEnv("ENVIRONMENT", "dev") == "production")
 	err := godotenv.Load()
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		log.Fatalf("Error loading .env file:\n%s\n", err)
@@ -98,37 +37,7 @@ func main() {
 	mailhogHost := MustLookupEnv("MAILHOG_HOST")
 	err = mails.Init(mailhogHost)
 
-	var disk interfaces.Disk
-	uploadDisk := LookupEnv("UPLOAD_DISK", "local")
-	switch uploadDisk {
-	case "local":
-		disk = disks.NewLocal("./storage/public", "/storage", disks.LocalDiskModePublic)
-	case "do-spaces":
-		disk, err = disks.NewDOSpaces(
-			MustLookupEnv("DO_SPACES_REGION"),
-			MustLookupEnv("DO_SPACES_BUCKET"),
-			MustLookupEnv("DO_SPACES_KEY_ID"),
-			MustLookupEnv("DO_SPACES_KEY_SECRET"),
-		)
-		if err != nil {
-			log.Fatal(fmt.Errorf("Failed to create s3 disk: %w", err))
-		}
-	case "s3":
-		disk, err = disks.NewS3(
-			MustLookupEnv("S3_ENDPOINT"),
-			MustLookupEnv("S3_REGION"),
-			MustLookupEnv("S3_BASE_URL"),
-			MustLookupEnv("S3_BUCKET"),
-			MustLookupEnv("S3_KEY_ID"),
-			MustLookupEnv("S3_KEY_SECRET"),
-			false,
-		)
-		if err != nil {
-			log.Fatal(fmt.Errorf("Failed to create s3 disk: %w", err))
-		}
-	default:
-		log.Fatalf("UPLOAD_DISK '%s' is not supported, supported: (locale/s3)", uploadDisk)
-	}
+	disk := ResolveDisk(LookupEnv, MustLookupEnv)
 	queries, err := database.Connect(
 		MustLookupEnv("DB_HOST"),
 		LookupEnv("DB_PORT", "5432"),
@@ -146,6 +55,7 @@ func main() {
 	// })
 
 	gin.SetMode(gin.ReleaseMode)
+
 	log.Println("Configuring routes...")
 	r := gin.Default()
 	r.Use(sentrygin.New(sentrygin.Options{
@@ -153,107 +63,20 @@ func main() {
 	}))
 	r.SetTrustedProxies([]string{})
 	r.Use(gzip.Gzip(gzip.BestSpeed))
-	r.Static("/storage", "./storage/public/")
-	jsDir, err := fs.Sub(publicJsFs, "public/js")
-	r.StaticFS("/js", http.FS(jsDir))
-	r.Use(func(c *gin.Context) {
-		isHtmx := c.GetHeader("HX-Request") == "true"
-		ctx := context.WithValue(c.Request.Context(), "isHtmx", isHtmx)
-		c.Set("isHtmx", isHtmx)
-		*c.Request = *c.Request.WithContext(ctx)
-		c.Next()
-	})
-	r.POST("/upload", HandleUploadFile(disk))
-	if disk, ok := disk.(interfaces.DirectUploadDisk); ok {
-		r.GET("/upload-url", HandleGetUploadUrl(disk))
-	}
-	r.Use(func(c *gin.Context) {
-		c.Next()
-		if c.GetBool("Unauthenticated") {
-			if c.GetBool("isHtmx") {
-				if c.FullPath() == "/logout" {
-					htmxRedirect(c, "/login")
-					return
-				}
-				_, err := tryGetUserIdFromCookie(c, true)
-				if err != nil {
-					htmxRedirect(c, "/login")
-					return
-				}
-				c.Header("HX-Reswap", "innerHTML show:top")
-				c.Header("HX-Retarget", "#relogin")
-				template(c, 422, templates.SessionExpired())
-			} else {
-				c.Redirect(302, "/login")
-			}
-		}
-	})
-	r.GET("/loginlink", HandleLoginLink(isProduction, queries))
-	authenticated := r.Group("", func(c *gin.Context) {
-		userId, err := tryGetUserIdFromCookie(c, false)
-		if err != nil {
-			c.Set("Unauthenticated", true)
-			c.Abort()
-			return
-		}
-		hub := sentry.GetHubFromContext(c.Request.Context())
-		hub.Scope().SetUser(sentry.User{
-			ID: strconv.Itoa(int(userId)),
-		})
-		var user *database.DisplayableUser
-		c.Set("GetUser", func() (*database.DisplayableUser, error) {
-			if user == nil {
-				*user, err = queries.GetUser(c.Request.Context(), userId)
-				if err != nil {
-					return nil, err
-				}
-			}
-			return user, err
-		})
-		c.Next()
-	})
-	getUser := func(c *gin.Context) (*database.DisplayableUser, error) {
-		user, err := c.MustGet("GetUser").(func() (*database.DisplayableUser, error))()
-		if err != nil {
-			c.AbortWithError(500, err)
-			return nil, err
-		}
-		return user, nil
-	}
-	authenticated.GET("/users/me", func(c *gin.Context) {
-		user, err := getUser(c)
-		if err != nil {
-			return
-		}
-		c.IndentedJSON(200, user)
-	})
-	r.GET("/logout", func(c *gin.Context) {
-		c.SetCookie("goform_auth", "", -1, "", "", false, true)
-		c.Set("Unauthenticated", true)
-	})
-	RegisterResource(authenticated, resources.NewUserResource(queries))
-	RegisterResource(authenticated, resources.NewAssignmentResource(queries))
-	r.GET("/login", HandleLogin(queries))
-	r.POST("/login", HandlePostLogin(queries))
-	r.GET("/relogin", HandleRelogin(queries))
-	r.PUT("/relogin", HandlePutRelogin(isProduction, queries))
 
-	r.GET("/", func(c *gin.Context) {
-		c.Redirect(302, "/users")
-	})
-	r.NoRoute(func(c *gin.Context) {
-		template(c, 404, templates.NotFound("/users"))
-	})
+	RegisterRoutes(
+		r,
+		disk,
+		isProduction,
+		queries,
+	)
 
-	mailhogUrl, err := url.Parse(fmt.Sprintf("http://%s:8025", mailhogHost))
-	if err != nil {
-		log.Fatalf("Failed to construct mailhog url: %s\n", err)
-	}
-	mailhogProxy := httputil.NewSingleHostReverseProxy(mailhogUrl)
-	mailhogBasicAuth := gin.BasicAuth(gin.Accounts{
-		MustLookupEnv("MAILHOG_USER"): MustLookupEnv("MAILHOG_PASSWORD"),
-	})
-	r.Any("/mailhog/*path", mailhogBasicAuth, gin.WrapH(mailhogProxy))
+	RegisterMailhogProxy(
+		r,
+		MailhogHost(mailhogHost),
+		MailhogUser(MustLookupEnv("MAILHOG_USER")),
+		MailhogPassword(MustLookupEnv("MAILHOG_PASSWORD")),
+	)
 
 	port := LookupEnv("PORT", "80")
 	log.Printf("Listening op port %s\n", port)
