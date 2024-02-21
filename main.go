@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"embed"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -229,15 +228,7 @@ func main() {
 		c.IndentedJSON(200, user)
 	})
 	r.GET("/logout", func(c *gin.Context) {
-		c.SetCookie(
-			"goform_auth",
-			"",
-			-1,
-			"",
-			"",
-			false,
-			true,
-		)
+		c.SetCookie("goform_auth", "", -1, "", "", false, true)
 		c.Set("Unauthenticated", true)
 	})
 	RegisterResource(authenticated, resources.NewUserResource(queries))
@@ -254,34 +245,17 @@ func main() {
 		template(c, 404, templates.NotFound("/users"))
 	})
 
-	port := LookupEnv("PORT", "80")
-	log.Printf("Listening op port %s\n", port)
 	mailhogUrl, err := url.Parse(fmt.Sprintf("http://%s:8025", mailhogHost))
 	if err != nil {
 		log.Fatalf("Failed to construct mailhog url: %s\n", err)
 	}
 	mailhogProxy := httputil.NewSingleHostReverseProxy(mailhogUrl)
-	ginHandler := r.Handler()
-	mailhogUser := MustLookupEnv("MAILHOG_USER")
-	mailhogPassword := MustLookupEnv("MAILHOG_PASSWORD")
-	http.ListenAndServe(fmt.Sprintf(":%s", port), http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.HasPrefix(r.URL.Path, "/mailhog") {
-			authHeader := r.Header.Get("Authorization")
-			if strings.HasPrefix(authHeader, "Basic ") {
-				encoded := authHeader[6:]
-				decoded, err := base64.StdEncoding.DecodeString(encoded)
-				if err == nil {
-					parts := strings.SplitN(string(decoded), ":", 2)
-					if len(parts) == 2 && parts[0] == mailhogUser && parts[1] == mailhogPassword {
-						mailhogProxy.ServeHTTP(w, r)
-						return
-					}
-				}
-			}
-			w.Header().Add("WWW-Authenticate", "Basic")
-			w.WriteHeader(401)
-		} else {
-			ginHandler.ServeHTTP(w, r)
-		}
-	}))
+	mailhogBasicAuth := gin.BasicAuth(gin.Accounts{
+		MustLookupEnv("MAILHOG_USER"): MustLookupEnv("MAILHOG_PASSWORD"),
+	})
+	r.Any("/mailhog/*path", mailhogBasicAuth, gin.WrapH(mailhogProxy))
+
+	port := LookupEnv("PORT", "80")
+	log.Printf("Listening op port %s\n", port)
+	log.Fatalln(r.Run(fmt.Sprintf(":%s", port)))
 }
