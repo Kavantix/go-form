@@ -41,7 +41,7 @@ func (q *Queries) InsertUser(ctx context.Context, name, email string, dateOfBirt
 type UpdateUserParams = updateUserParams
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
-	err := q.UpdateUser(ctx, arg)
+	err := q.updateUser(ctx, arg)
 	return checkDuplicateEmailErr(err)
 }
 
