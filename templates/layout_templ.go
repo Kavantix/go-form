@@ -130,6 +130,10 @@ func Head() templ.Component {
 			return templ_7745c5c3_Err
 		}
 		templ_7745c5c3_Var9 := `
+
+body {
+  touch-action: manipulation;
+}
   
 thead tr th:first-child { border-top-left-radius: 10px; border-bottom-left-radius: 10px;}
 thead tr th:last-child { border-top-right-radius: 10px; border-bottom-right-radius: 10px;}
@@ -144,6 +148,10 @@ tbody tr td:last-child { border-top-right-radius: 5px; border-bottom-right-radiu
   width: 16px;
   height: 16px;
   animation: spin 2s linear infinite;
+}
+
+tr.htmx-request, a.htmx-request, button.htmx-request {
+  background-color: rgb(12 74 110) !important;
 }
 
 @keyframes spin {

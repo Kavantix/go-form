@@ -328,7 +328,7 @@ func HandleResourceIndexStream[T any](resource resources.Resource[T]) func(c *gi
 		startSseStream(c)
 		hasNextPage := true
 		page := 0
-		pageSize := 5
+		pageSize := 50
 		for hasNextPage {
 			rows, err := resource.FetchPage(c.Request.Context(), page, pageSize)
 			if err != nil {

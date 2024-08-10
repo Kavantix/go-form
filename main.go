@@ -58,6 +58,7 @@ func main() {
 
 	log.Println("Configuring routes...")
 	r := gin.Default()
+	r.UseH2C = true
 	r.Use(sentrygin.New(sentrygin.Options{
 		Repanic: true,
 	}))
