@@ -11,9 +11,17 @@ templ Tab(url templ.SafeURL, isActive bool) {
 			if isActive {
 				class={ activeTab }
 				aria-current="page"
+				hx-get={ string(url) }
+				hx-target="body"
+				hx-push-url="true"
+				hx-trigger="mousedown"
 				href={ url }
 			} else {
 				href={ url }
+				hx-get={ string(url) }
+				hx-target="body"
+				hx-push-url="true"
+				hx-trigger="mousedown"
 				class={ inactiveTab }
 			}
 		>

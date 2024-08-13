@@ -329,7 +329,7 @@ func HandleResourceIndexStream[T any](resource resources.Resource[T]) func(c *gi
 		hasNextPage := true
 		page := 0
 		pageSize := 50
-		for hasNextPage {
+		for hasNextPage && page < 5 {
 			rows, err := resource.FetchPage(c.Request.Context(), page, pageSize)
 			if err != nil {
 				if !errors.Is(err, context.Canceled) {

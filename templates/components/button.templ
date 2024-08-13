@@ -31,6 +31,10 @@ templ Button(config ButtonConfig) {
 	if config.Href != "" {
 		<a
 			href={ templ.URL(config.Href) }
+			hx-get={ string(templ.URL(config.Href)) }
+			hx-target="body"
+			hx-push-url="true"
+			hx-trigger="mousedown"
 			class={ "btn", config.typeClass() }
 		>
 			{ children... }
