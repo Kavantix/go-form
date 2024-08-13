@@ -8,7 +8,10 @@ package components
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-import . "github.com/Kavantix/go-form/interfaces"
+import (
+	"fmt"
+	. "github.com/Kavantix/go-form/interfaces"
+)
 
 type SelectFormFieldConfig[T any] struct {
 	FieldLabel  string
@@ -18,6 +21,8 @@ type SelectFormFieldConfig[T any] struct {
 	Required    bool
 	FieldValue  func(row *T) string
 }
+
+var _ FormField[any] = &SelectFormFieldConfig[any]{}
 
 func SelectFormField[T any](config *SelectFormFieldConfig[T], value string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
@@ -66,7 +71,7 @@ func SelectFormField[T any](config *SelectFormFieldConfig[T], value string) temp
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(config.Placeholder)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/select_form_field.templ`, Line: 20, Col: 35}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/select_form_field.templ`, Line: 25, Col: 35}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
@@ -94,7 +99,7 @@ func SelectFormField[T any](config *SelectFormFieldConfig[T], value string) temp
 				var templ_7745c5c3_Var4 string
 				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(option.Value)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/select_form_field.templ`, Line: 24, Col: 68}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/select_form_field.templ`, Line: 29, Col: 68}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 				if templ_7745c5c3_Err != nil {
@@ -107,7 +112,7 @@ func SelectFormField[T any](config *SelectFormFieldConfig[T], value string) temp
 				var templ_7745c5c3_Var5 string
 				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(option.Label)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/select_form_field.templ`, Line: 24, Col: 85}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/select_form_field.templ`, Line: 29, Col: 85}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 				if templ_7745c5c3_Err != nil {
@@ -137,11 +142,26 @@ func (f *SelectFormFieldConfig[T]) RenderFormField(form FormConfig[T], value *T)
 	if value != nil {
 		val = f.Value(value)
 	}
-	return SelectFormField[T](f, val)
+	return SelectFormField(f, val)
 }
 
 func (f *SelectFormFieldConfig[T]) Name() string {
 	return f.FieldName
+}
+
+func (f *SelectFormFieldConfig[T]) Validator(value string) string {
+	if value == "" {
+		if f.Required {
+			return fmt.Sprintf("This field is required")
+		}
+		return ""
+	}
+	for _, option := range f.Options {
+		if option.Value == value {
+			return ""
+		}
+	}
+	return fmt.Sprintf("`%s` is not a valid option", value)
 }
 
 func (f *SelectFormFieldConfig[T]) Label() string {

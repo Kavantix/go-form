@@ -419,14 +419,18 @@ func HandleValidateResource[T any](resource resources.Resource[T]) func(c *gin.C
 		}
 		formFields := map[string]string{}
 		formConfig := resource.FormConfig()
+		validationErrors := map[string]string{}
 		for _, field := range formConfig.Fields {
 			fieldName := field.Name()
 			formFields[fieldName] = c.Query(fieldName)
+			validationError := field.Validator(formFields[fieldName])
+			if validationError != "" {
+				validationErrors[fieldName] = validationError
+			}
 		}
 		_, err = resource.ParseRow(c.Request.Context(), id, formFields)
 		if err != nil {
 			if validationErr, isValidationErr := err.(resources.ValidationError); isValidationErr {
-				validationErrors := map[string]string{}
 				fmt.Printf("Validation failed %s: %s\n", resource.Title(), err)
 				validationErrors[validationErr.FieldName] = validationErr.Message
 				c.JSON(422, gin.H{
@@ -442,6 +446,11 @@ func HandleValidateResource[T any](resource resources.Resource[T]) func(c *gin.C
 				})
 				return
 			}
+		} else if len(validationErrors) > 0 {
+			c.JSON(422, gin.H{
+				"validationErrors": validationErrors,
+			})
+			return
 		}
 		c.JSON(200, gin.H{
 			"validationErrors": gin.H{},
@@ -454,9 +463,14 @@ func HandleCreateResource[T any](resource resources.Resource[T]) func(c *gin.Con
 	return func(c *gin.Context) {
 		formFields := map[string]string{}
 		formConfig := resource.FormConfig()
+		validationErrors := map[string]string{}
 		for _, field := range formConfig.Fields {
 			fieldName := field.Name()
 			formFields[fieldName] = c.PostForm(fieldName)
+			validationError := field.Validator(formFields[fieldName])
+			if validationError != "" {
+				validationErrors[fieldName] = validationError
+			}
 		}
 		row, err := resource.ParseRow(c.Request.Context(), nil, formFields)
 		if err != nil {
@@ -475,6 +489,9 @@ func HandleCreateResource[T any](resource resources.Resource[T]) func(c *gin.Con
 				return
 			}
 
+		} else if len(validationErrors) > 0 {
+			template(c, 422, templates.ResourceView(resource, row, validationErrors))
+			return
 		}
 		id, err := resource.CreateRow(c.Request.Context(), row)
 		if err != nil {
@@ -505,14 +522,18 @@ func HandleUpdateResource[T any](resource resources.Resource[T]) func(c *gin.Con
 		}
 		formFields := map[string]string{}
 		formConfig := resource.FormConfig()
+		validationErrors := map[string]string{}
 		for _, field := range formConfig.Fields {
 			fieldName := field.Name()
 			formFields[fieldName] = c.PostForm(fieldName)
+			validationError := field.Validator(formFields[fieldName])
+			if validationError != "" {
+				validationErrors[fieldName] = validationError
+			}
 		}
 		row, err := resource.ParseRow(c.Request.Context(), &id, formFields)
 		if err != nil {
 			if validationErr, ok := err.(resources.ValidationError); ok {
-				validationErrors := map[string]string{}
 				fmt.Printf("Failed to update %s: %s\n", resource.Title(), validationErr)
 				validationErrors[validationErr.FieldName] = validationErr.Reason.Error()
 				template(c, 422, templates.ResourceView(resource, row, validationErrors))
@@ -525,8 +546,11 @@ func HandleUpdateResource[T any](resource resources.Resource[T]) func(c *gin.Con
 				c.AbortWithError(500, err)
 				return
 			}
-
+		} else if len(validationErrors) > 0 {
+			template(c, 422, templates.ResourceView(resource, row, validationErrors))
+			return
 		}
+
 		err = resource.UpdateRow(c.Request.Context(), row)
 		if err != nil {
 			if err == database.ErrDuplicateEmail {

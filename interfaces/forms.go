@@ -12,4 +12,5 @@ type FormField[T any] interface {
 	Label() string
 	RenderFormField(form FormConfig[T], value *T) templ.Component
 	Value(row *T) string
+	Validator(value string) string
 }

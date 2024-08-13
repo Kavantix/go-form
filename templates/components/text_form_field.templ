@@ -3,13 +3,16 @@ package components
 import . "github.com/Kavantix/go-form/interfaces"
 
 type TextFormFieldConfig[T any] struct {
-	FieldLabel  string
-	FieldName   string
-	Placeholder string
-	Type        string
-	Required    bool
-	FieldValue  func(row *T) string
+	FieldLabel     string
+	FieldName      string
+	Placeholder    string
+	Type           string
+	Required       bool
+	FieldValue     func(row *T) string
+	FieldValidator func(value string) string
 }
+
+var _ FormField[any] = &TextFormFieldConfig[any]{}
 
 templ TextField(required bool, fieldType, name, placeholder, value string) {
 	<input
@@ -33,14 +36,14 @@ templ TextField(required bool, fieldType, name, placeholder, value string) {
 	/>
 }
 
-templ TextFormField[T any](form (FormConfig[T]), config (*TextFormFieldConfig[T]), value *T) {
+templ TextFormField[T any](form FormConfig[T], config *TextFormFieldConfig[T], value *T) {
 	@formField(config) {
 		@TextField(
-		config.Required,
-		config.Type,
-    "",
-		config.Placeholder,
-    config.Value(value),
+			config.Required,
+			config.Type,
+			"",
+			config.Placeholder,
+			config.Value(value),
 		)
 	}
 }
@@ -51,6 +54,13 @@ func (f *TextFormFieldConfig[T]) RenderFormField(form FormConfig[T], value *T) t
 
 func (f *TextFormFieldConfig[T]) Name() string {
 	return f.FieldName
+}
+
+func (f *TextFormFieldConfig[T]) Validator(value string) string {
+	if f.FieldValidator == nil {
+		return ""
+	}
+	return f.FieldValidator(value)
 }
 
 func (f *TextFormFieldConfig[T]) Label() string {

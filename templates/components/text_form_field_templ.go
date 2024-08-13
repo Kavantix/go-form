@@ -11,13 +11,16 @@ import templruntime "github.com/a-h/templ/runtime"
 import . "github.com/Kavantix/go-form/interfaces"
 
 type TextFormFieldConfig[T any] struct {
-	FieldLabel  string
-	FieldName   string
-	Placeholder string
-	Type        string
-	Required    bool
-	FieldValue  func(row *T) string
+	FieldLabel     string
+	FieldName      string
+	Placeholder    string
+	Type           string
+	Required       bool
+	FieldValue     func(row *T) string
+	FieldValidator func(value string) string
 }
+
+var _ FormField[any] = &TextFormFieldConfig[any]{}
 
 func TextField(required bool, fieldType, name, placeholder, value string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
@@ -66,7 +69,7 @@ func TextField(required bool, fieldType, name, placeholder, value string) templ.
 			var templ_7745c5c3_Var2 string
 			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(fieldType)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/text_form_field.templ`, Line: 22, Col: 19}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/text_form_field.templ`, Line: 25, Col: 19}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 			if templ_7745c5c3_Err != nil {
@@ -85,7 +88,7 @@ func TextField(required bool, fieldType, name, placeholder, value string) templ.
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/text_form_field.templ`, Line: 25, Col: 14}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/text_form_field.templ`, Line: 28, Col: 14}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
@@ -104,7 +107,7 @@ func TextField(required bool, fieldType, name, placeholder, value string) templ.
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(value)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/text_form_field.templ`, Line: 28, Col: 16}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/text_form_field.templ`, Line: 31, Col: 16}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -122,7 +125,7 @@ func TextField(required bool, fieldType, name, placeholder, value string) templ.
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(placeholder)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/text_form_field.templ`, Line: 32, Col: 27}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/text_form_field.templ`, Line: 35, Col: 27}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -192,6 +195,13 @@ func (f *TextFormFieldConfig[T]) RenderFormField(form FormConfig[T], value *T) t
 
 func (f *TextFormFieldConfig[T]) Name() string {
 	return f.FieldName
+}
+
+func (f *TextFormFieldConfig[T]) Validator(value string) string {
+	if f.FieldValidator == nil {
+		return ""
+	}
+	return f.FieldValidator(value)
 }
 
 func (f *TextFormFieldConfig[T]) Label() string {

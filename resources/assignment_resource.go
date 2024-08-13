@@ -96,6 +96,12 @@ func (r assignmentResource) FormConfig() FormConfig[database.Assignment] {
 				Placeholder: "Enter a name",
 				Required:    true,
 				FieldValue:  func(row *database.Assignment) string { return row.Name },
+				FieldValidator: func(value string) string {
+					if len(value) < 10 {
+						return fmt.Sprintf("`%s` is too short, minimum length is 10", value)
+					}
+					return ""
+				},
 			},
 			&components.SelectFormFieldConfig[database.Assignment]{
 				FieldLabel:  "Type",

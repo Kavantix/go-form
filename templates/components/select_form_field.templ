@@ -1,6 +1,9 @@
 package components
 
-import . "github.com/Kavantix/go-form/interfaces"
+import (
+	"fmt"
+	. "github.com/Kavantix/go-form/interfaces"
+)
 
 type SelectFormFieldConfig[T any] struct {
 	FieldLabel  string
@@ -11,7 +14,9 @@ type SelectFormFieldConfig[T any] struct {
 	FieldValue  func(row *T) string
 }
 
-templ SelectFormField[T any](config (*SelectFormFieldConfig[T]), value string) {
+var _ FormField[any] = &SelectFormFieldConfig[any]{}
+
+templ SelectFormField[T any](config *SelectFormFieldConfig[T], value string) {
 	@formField(config, formFieldDebounce{Millis: 20}) {
 		<select
 			x-bind="input"
@@ -32,11 +37,26 @@ func (f *SelectFormFieldConfig[T]) RenderFormField(form FormConfig[T], value *T)
 	if value != nil {
 		val = f.Value(value)
 	}
-	return SelectFormField[T](f, val)
+	return SelectFormField(f, val)
 }
 
 func (f *SelectFormFieldConfig[T]) Name() string {
 	return f.FieldName
+}
+
+func (f *SelectFormFieldConfig[T]) Validator(value string) string {
+	if value == "" {
+		if f.Required {
+			return fmt.Sprintf("This field is required")
+		}
+		return ""
+	}
+	for _, option := range f.Options {
+		if option.Value == value {
+			return ""
+		}
+	}
+	return fmt.Sprintf("`%s` is not a valid option", value)
 }
 
 func (f *SelectFormFieldConfig[T]) Label() string {
