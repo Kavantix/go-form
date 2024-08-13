@@ -55,16 +55,16 @@ func (q *Queries) InsertAssignment(ctx context.Context, name string, type_ strin
 
 const updateAssignment = `-- name: UpdateAssignment :exec
 update assignments set
-  name = $2,
-  "type" = $3,
-  "order" = coalesce(cast($4 as int4), assignments."order")
+  name = coalesce($2, name),
+  "type" = coalesce($3, "type"),
+  "order" = coalesce(cast($4 as int4), "order")
 where id = $1
 `
 
 type UpdateAssignmentParams struct {
 	Id    int32       `db:"id"`
-	Name  string      `db:"name"`
-	Type  string      `db:"type"`
+	Name  pgtype.Text `db:"name"`
+	Type  pgtype.Text `db:"type"`
 	Order pgtype.Int4 `db:"order"`
 }
 

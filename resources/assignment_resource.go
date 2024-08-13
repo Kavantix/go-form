@@ -72,12 +72,11 @@ func (r assignmentResource) CreateRow(ctx context.Context, assignment *database.
 }
 
 func (r assignmentResource) UpdateRow(ctx context.Context, assignment *database.Assignment) error {
-	order := pgtype.Int4{Int32: assignment.Order, Valid: assignment.Order > 0}
 	return r.queries.UpdateAssignment(ctx, database.UpdateAssignmentParams{
 		Id:    assignment.Id,
-		Name:  assignment.Name,
-		Type:  assignment.Type,
-		Order: order,
+		Name:  pgtype.Text{String: assignment.Name, Valid: assignment.Name != ""},
+		Type:  pgtype.Text{String: assignment.Type, Valid: assignment.Type != ""},
+		Order: pgtype.Int4{Int32: assignment.Order, Valid: assignment.Order > 0},
 	})
 }
 

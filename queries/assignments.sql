@@ -26,7 +26,7 @@ with max_order as (
 
 -- name: UpdateAssignment :exec
 update assignments set
-  name = $2,
-  "type" = $3,
-  "order" = coalesce(cast(sqlc.narg('order') as int4), assignments."order")
+  name = coalesce(sqlc.narg('name'), name),
+  "type" = coalesce(sqlc.narg('type'), "type"),
+  "order" = coalesce(cast(sqlc.narg('order') as int4), "order")
 where id = $1;
