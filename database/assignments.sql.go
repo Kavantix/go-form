@@ -7,6 +7,8 @@ package database
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const getAssignment = `-- name: GetAssignment :one
@@ -55,15 +57,15 @@ const updateAssignment = `-- name: UpdateAssignment :exec
 update assignments set
   name = $2,
   "type" = $3,
-  "order" = case when $3 is not null then $4 else assignments."order" end
+  "order" = coalesce(cast($4 as int4), assignments."order")
 where id = $1
 `
 
 type UpdateAssignmentParams struct {
-	Id    int32  `db:"id"`
-	Name  string `db:"name"`
-	Type  string `db:"type"`
-	Order int32  `db:"order"`
+	Id    int32       `db:"id"`
+	Name  string      `db:"name"`
+	Type  string      `db:"type"`
+	Order pgtype.Int4 `db:"order"`
 }
 
 func (q *Queries) UpdateAssignment(ctx context.Context, arg UpdateAssignmentParams) error {

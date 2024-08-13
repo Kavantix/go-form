@@ -28,5 +28,5 @@ with max_order as (
 update assignments set
   name = $2,
   "type" = $3,
-  "order" = case when $3 is not null then $4 else assignments."order" end
+  "order" = coalesce(cast(sqlc.narg('order') as int4), assignments."order")
 where id = $1;

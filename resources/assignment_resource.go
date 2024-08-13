@@ -9,6 +9,7 @@ import (
 	"github.com/Kavantix/go-form/database"
 	. "github.com/Kavantix/go-form/interfaces"
 	"github.com/Kavantix/go-form/templates/components"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type assignmentResource struct {
@@ -71,11 +72,12 @@ func (r assignmentResource) CreateRow(ctx context.Context, assignment *database.
 }
 
 func (r assignmentResource) UpdateRow(ctx context.Context, assignment *database.Assignment) error {
+	order := pgtype.Int4{Int32: assignment.Order, Valid: assignment.Order > 0}
 	return r.queries.UpdateAssignment(ctx, database.UpdateAssignmentParams{
 		Id:    assignment.Id,
 		Name:  assignment.Name,
 		Type:  assignment.Type,
-		Order: assignment.Order,
+		Order: order,
 	})
 }
 
