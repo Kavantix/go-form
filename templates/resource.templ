@@ -13,7 +13,8 @@ templ ResourceView[T any](resource resources.Resource[T], row *T, validationErro
 	@Layout(resource.Location(nil)) {
 		@components.Form(resource, row, validationErrors) {
 			@components.Button(components.ButtonConfig{}) {
-				Save
+				<span>Save</span>
+				<div class="inline-block htmx-indicator"></div>
 			}
 			@components.Button(components.ButtonConfig{Href: resource.Location(nil), Type: components.ButtonSecondary}) {
 				Cancel
@@ -27,7 +28,8 @@ templ ResourceCreate[T any](resource resources.Resource[T], row *T, validationEr
 		<h1 class="text-xl mx-8 mt-8">Create new { resource.Title() }</h1>
 		@components.Form(resource, row, validationErrors) {
 			@components.Button(components.ButtonConfig{}) {
-				Save
+				<span>Save</span>
+				<div class="inline-block htmx-indicator"></div>
 			}
 			@components.Button(components.ButtonConfig{Href: resource.Location(nil),Type: components.ButtonSecondary}) {
 				Cancel

@@ -4,3 +4,4 @@ storage
 keys
 !cmd/keys
 go-form
+templates/**/*.txt
