@@ -98,7 +98,7 @@ func (r assignmentResource) FormConfig() FormConfig[database.Assignment] {
 				FieldValue:  func(row *database.Assignment) string { return row.Name },
 				FieldValidator: func(value string) string {
 					if len(value) < 10 {
-						return fmt.Sprintf("`%s` is too short, minimum length is 10", value)
+						return "Too short, minimum length is 10"
 					}
 					return ""
 				},
@@ -109,12 +109,12 @@ func (r assignmentResource) FormConfig() FormConfig[database.Assignment] {
 				Placeholder: "Choose a type",
 				Options: []struct{ Label, Value string }{
 					{
-						Label: "Sound",
-						Value: "sound",
-					},
-					{
 						Label: "Text",
 						Value: "text",
+					},
+					{
+						Label: "Sound",
+						Value: "sound",
 					},
 				},
 				Required:   true,

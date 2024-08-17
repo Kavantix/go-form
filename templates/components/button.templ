@@ -35,6 +35,7 @@ templ Button(config ButtonConfig) {
 			hx-target="body"
 			hx-push-url="true"
 			hx-trigger="mousedown"
+			onclick="event.preventDefault()"
 			class={ "btn", config.typeClass() }
 		>
 			{ children... }

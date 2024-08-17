@@ -205,6 +205,9 @@ func (f *TextFormFieldConfig[T]) Validator(value string) string {
 }
 
 func (f *TextFormFieldConfig[T]) Label() string {
+	if f.Required {
+		return f.FieldLabel + "*"
+	}
 	return f.FieldLabel
 }
 

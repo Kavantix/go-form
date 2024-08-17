@@ -8,20 +8,16 @@ var (
 templ Tab(url templ.SafeURL, isActive bool) {
 	<li class="mr-2">
 		<a
+			onclick="event.preventDefault()"
+			hx-get={ string(url) }
+			hx-target="body"
+			hx-push-url="true"
+			hx-trigger="mousedown"
+			href={ url }
 			if isActive {
 				class={ activeTab }
 				aria-current="page"
-				hx-get={ string(url) }
-				hx-target="body"
-				hx-push-url="true"
-				hx-trigger="mousedown"
-				href={ url }
 			} else {
-				href={ url }
-				hx-get={ string(url) }
-				hx-target="body"
-				hx-push-url="true"
-				hx-trigger="mousedown"
 				class={ inactiveTab }
 			}
 		>

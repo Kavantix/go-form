@@ -60,7 +60,7 @@ templ TableRow[T any](config TableConfig[T], row T) {
 		hx-target="body"
 		hx-trigger="mousedown"
 		hx-push-url="true"
-		class="cursor-pointer hover fade-in active:bg-sky-600 hover:active:bg-sky-900"
+		class="cursor-pointer hover fade-in active:bg-sky-600 hover:active:bg-sky-900 transition-[background-color]"
 	>
 		for _, column := range config.Columns() {
 			<td class="py-0 px-4"><div class="py-4">{ column.Value(row) }</div></td>

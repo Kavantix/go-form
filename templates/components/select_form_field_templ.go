@@ -81,6 +81,28 @@ func SelectFormField[T any](config *SelectFormFieldConfig[T], value string) temp
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
+			if !config.Required || value == "" {
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<option")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				if config.Required {
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" disabled")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+				}
+				if value == "" {
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" selected")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" value></option> ")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
 			for _, option := range config.Options {
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<option")
 				if templ_7745c5c3_Err != nil {
@@ -99,7 +121,7 @@ func SelectFormField[T any](config *SelectFormFieldConfig[T], value string) temp
 				var templ_7745c5c3_Var4 string
 				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(option.Value)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/select_form_field.templ`, Line: 29, Col: 68}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/select_form_field.templ`, Line: 32, Col: 68}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 				if templ_7745c5c3_Err != nil {
@@ -112,7 +134,7 @@ func SelectFormField[T any](config *SelectFormFieldConfig[T], value string) temp
 				var templ_7745c5c3_Var5 string
 				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(option.Label)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/select_form_field.templ`, Line: 29, Col: 85}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/select_form_field.templ`, Line: 32, Col: 85}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 				if templ_7745c5c3_Err != nil {
@@ -165,6 +187,9 @@ func (f *SelectFormFieldConfig[T]) Validator(value string) string {
 }
 
 func (f *SelectFormFieldConfig[T]) Label() string {
+	if f.Required {
+		return f.FieldLabel + "*"
+	}
 	return f.FieldLabel
 }
 

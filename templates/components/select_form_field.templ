@@ -25,6 +25,9 @@ templ SelectFormField[T any](config *SelectFormFieldConfig[T], value string) {
 			placeholder={ config.Placeholder }
 			:class="valid ? '' : 'select-error'"
 		>
+			if !config.Required || value == "" {
+				<option disabled?={ config.Required } selected?={ value == "" } value></option>
+			}
 			for _, option := range config.Options {
 				<option selected?={ value == option.Value } value={ option.Value }>{ option.Label }</option>
 			}
@@ -60,6 +63,9 @@ func (f *SelectFormFieldConfig[T]) Validator(value string) string {
 }
 
 func (f *SelectFormFieldConfig[T]) Label() string {
+	if f.Required {
+		return f.FieldLabel + "*"
+	}
 	return f.FieldLabel
 }
 
