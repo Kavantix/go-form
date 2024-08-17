@@ -133,10 +133,13 @@ templ wrapWithHeadIfNeeded() {
 	}
 }
 
-templ Layout(currentTab string) {
+templ Layout(currentTab string, childs ...templ.Component) {
 	@wrapWithHeadIfNeeded() {
 		@body(currentTab) {
 			{ children... }
+			for _, child := range childs {
+				@child
+			}
 		}
 	}
 }
@@ -156,7 +159,9 @@ templ body(currentTab string) {
 				}
 			</ul>
 		</div>
-		{ children... }
+		<main>
+			{ children... }
+		</main>
 		<div id="relogin"></div>
 	</body>
 }

@@ -1,39 +1,41 @@
 package templates
 
-import "github.com/Kavantix/go-form/resources"
-import "github.com/Kavantix/go-form/templates/components"
+import (
+	"github.com/Kavantix/go-form/resources"
+	"github.com/Kavantix/go-form/templates/components"
+)
 
 templ ResourceOverview[T any](resource resources.Resource[T], rows []T) {
 	@Layout(resource.Location(nil)) {
-		@Table(resource.TableConfig(), rows)
+		@ResourceOverviewPartial(resource, rows)
 	}
 }
 
+templ ResourceOverviewPartial[T any](resource resources.Resource[T], rows []T) {
+	@Table(resource.TableConfig(), rows)
+}
+
 templ ResourceView[T any](resource resources.Resource[T], row *T, validationErrors map[string]string) {
-	@Layout(resource.Location(nil)) {
-		@components.Form(resource, row, validationErrors) {
-			@components.Button(components.ButtonConfig{}) {
-				<span>Save</span>
-				<div class="inline-block htmx-indicator"></div>
-			}
-			@components.Button(components.ButtonConfig{Href: resource.Location(nil), Type: components.ButtonSecondary}) {
-				Cancel
-			}
+	@components.Form(resource, row, validationErrors) {
+		@components.Button(components.ButtonConfig{}) {
+			<span>Save</span>
+			<div class="inline-block htmx-indicator"></div>
+		}
+		@components.Button(components.ButtonConfig{Href: resource.Location(nil), Type: components.ButtonSecondary}) {
+			Cancel
 		}
 	}
 }
 
 templ ResourceCreate[T any](resource resources.Resource[T], row *T, validationErrors map[string]string) {
-	@Layout(resource.Location(nil)) {
-		<h1 class="text-xl mx-8 mt-8">Create new { resource.Title() }</h1>
-		@components.Form(resource, row, validationErrors) {
-			@components.Button(components.ButtonConfig{}) {
-				<span>Save</span>
-				<div class="inline-block htmx-indicator"></div>
-			}
-			@components.Button(components.ButtonConfig{Href: resource.Location(nil),Type: components.ButtonSecondary}) {
-				Cancel
-			}
+	<h1 class="text-xl mx-8 mt-8">Create new { resource.Title() }</h1>
+	@components.Form(resource, row, validationErrors) {
+		@components.Button(components.ButtonConfig{}) {
+			<span>Save</span>
+			<div class="inline-block htmx-indicator"></div>
+		}
+		@components.Button(components.ButtonConfig{Href: resource.Location(nil), Type: components.ButtonSecondary}) {
+			Cancel
 		}
 	}
 }

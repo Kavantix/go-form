@@ -367,7 +367,14 @@ func HandleResourceIndexStream[T any](resource resources.Resource[T]) func(c *gi
 	}
 }
 
-func HandleResourceIndex[T any](resource resources.Resource[T]) func(c *gin.Context) {
+type renderPartialOption uint8
+
+const (
+	RenderPartial = 1
+	RenderFull    = 0
+)
+
+func HandleResourceIndex[T any](resource resources.Resource[T], partialOption renderPartialOption) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		page, pageSize, err := paginationParams(c)
 		if err != nil {
@@ -384,7 +391,11 @@ func HandleResourceIndex[T any](resource resources.Resource[T]) func(c *gin.Cont
 			c.AbortWithError(500, err)
 			return
 		}
-		template(c, 200, templates.ResourceOverview(resource, rows))
+		if partialOption == RenderPartial {
+			template(c, 200, templates.ResourceOverviewPartial(resource, rows))
+		} else {
+			template(c, 200, templates.ResourceOverview(resource, rows))
+		}
 	}
 }
 
@@ -400,13 +411,13 @@ func HandleResourceView[T any](resource resources.Resource[T]) func(c *gin.Conte
 			template(c, 404, templates.NotFound(resource.Location(nil)))
 			return
 		}
-		template(c, 200, templates.ResourceView(resource, row, nil))
+		templateInLayout(c, 200, resource.Location(nil), templates.ResourceView(resource, row, nil))
 	}
 }
 
 func HandleResourceCreate[T any](resource resources.Resource[T]) func(c *gin.Context) {
 	return func(c *gin.Context) {
-		template(c, 200, templates.ResourceCreate(resource, nil, map[string]string{}))
+		templateInLayout(c, 200, resource.Location(nil), templates.ResourceCreate(resource, nil, map[string]string{}))
 	}
 }
 
@@ -459,7 +470,7 @@ func HandleValidateResource[T any](resource resources.Resource[T]) func(c *gin.C
 }
 
 func HandleCreateResource[T any](resource resources.Resource[T]) func(c *gin.Context) {
-	handleIndex := HandleResourceIndex(resource)
+	handleIndex := HandleResourceIndex(resource, RenderPartial)
 	return func(c *gin.Context) {
 		formFields := map[string]string{}
 		formConfig := resource.FormConfig()
@@ -513,7 +524,7 @@ func HandleCreateResource[T any](resource resources.Resource[T]) func(c *gin.Con
 }
 
 func HandleUpdateResource[T any](resource resources.Resource[T]) func(c *gin.Context) {
-	handleIndex := HandleResourceIndex(resource)
+	handleIndex := HandleResourceIndex(resource, RenderPartial)
 	return func(c *gin.Context) {
 		id, err := strconv.Atoi(c.Param("id"))
 		if err != nil {

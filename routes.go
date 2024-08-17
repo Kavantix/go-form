@@ -165,7 +165,7 @@ func setupAuthenticatedGroup(r *gin.Engine, queries *database.Queries) (Authenti
 
 func RegisterResource[T any](e AuthenticatedGroup, resource resources.Resource[T]) {
 	r := e.Group(resource.Location(nil))
-	r.GET("", HandleResourceIndex(resource))
+	r.GET("", HandleResourceIndex(resource, RenderFull))
 	r.GET("/stream", HandleResourceIndexStream(resource))
 	r.GET("/:id", HandleResourceView(resource))
 	r.GET("/:id/validate", HandleValidateResource(resource))

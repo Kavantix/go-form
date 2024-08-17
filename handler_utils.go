@@ -4,10 +4,15 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/Kavantix/go-form/templates"
 	"github.com/a-h/templ"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 )
+
+func templateInLayout(c *gin.Context, code int, currentTab string, children ...templ.Component) {
+	template(c, code, templates.Layout(currentTab, children...))
+}
 
 func template(c *gin.Context, code int, t templ.Component) {
 	c.Writer.Header().Set("Content-Type", "text/html; charset=utf-8")
