@@ -32,6 +32,9 @@ type AuthenticatedGroup struct {
 //go:embed public/js
 var publicJsFs embed.FS
 
+//go:embed public/css
+var publicCssFs embed.FS
+
 func RegisterRoutes(
 	r *gin.Engine,
 	disk interfaces.Disk,
@@ -44,6 +47,11 @@ func RegisterRoutes(
 		log.Fatalf("Failed to create public js dir: %s\n", err)
 	}
 	r.StaticFS("/js", http.FS(jsDir))
+	cssDir, err := fs.Sub(publicCssFs, "public/css")
+	if err != nil {
+		log.Fatalf("Failed to create public css dir: %s\n", err)
+	}
+	r.StaticFS("/css", http.FS(cssDir))
 	r.Use(setIsHtmx)
 	r.POST("/upload", HandleUploadFile(disk))
 	if disk, ok := disk.(interfaces.DirectUploadDisk); ok {
