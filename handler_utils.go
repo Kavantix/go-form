@@ -14,18 +14,20 @@ func templateInLayout(c *gin.Context, code int, currentTab string, children ...t
 	template(c, code, templates.Layout(currentTab, children...))
 }
 
-func template(c *gin.Context, code int, t templ.Component) {
+func template(c *gin.Context, code int, templates ...templ.Component) {
 	c.Writer.Header().Set("Content-Type", "text/html; charset=utf-8")
 	c.Status(code)
-	span := sentry.StartSpan(
-		c.Request.Context(),
-		"template.render",
-		sentry.WithDescription(fmt.Sprintf("Template: %+v", t)),
-	)
-	err := t.Render(c.Request.Context(), c.Writer)
-	span.Finish()
-	if err != nil {
-		c.AbortWithError(500, fmt.Errorf("failed to render template `%+v`: %w", t, err))
+	for _, t := range templates {
+		span := sentry.StartSpan(
+			c.Request.Context(),
+			"template.render",
+			sentry.WithDescription(fmt.Sprintf("Template: %+v", t)),
+		)
+		err := t.Render(c.Request.Context(), c.Writer)
+		span.Finish()
+		if err != nil {
+			c.AbortWithError(500, fmt.Errorf("failed to render template `%+v`: %w", t, err))
+		}
 	}
 }
 

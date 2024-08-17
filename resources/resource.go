@@ -40,7 +40,7 @@ type Resource[T any] interface {
 }
 
 func NewResourceTableConfig[T any](resource Resource[T]) TableConfigBuilder[T] {
-	return NewTableConfig[T](func(row T) string { return resource.Location(&row) }).
+	return NewTableConfig(func(row T) string { return resource.Location(&row) }).
 		WithTitle(resource.Title()).
 		WithStreamUrl(fmt.Sprintf("%s/stream", resource.Location(nil))).
 		WithCreate(

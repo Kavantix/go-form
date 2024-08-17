@@ -1,0 +1,43 @@
+package components
+
+import "fmt"
+
+type toastVariant int
+
+const (
+	ToastInfo    toastVariant = 0
+	ToastSuccess toastVariant = 1
+	ToastError   toastVariant = 2
+)
+
+type ToastConfig struct {
+	Message    string
+	DurationMs int
+	Variant    toastVariant
+}
+
+func toastClass(config ToastConfig) string {
+	const class = "hidden bg-base-300 border-l-8 text-base-content px-4 py-2 max-w-52 absolute transition-[right,top] duration-300"
+
+	switch config.Variant {
+	case ToastSuccess:
+		return fmt.Sprintf("%s border-l-success", class)
+	case ToastError:
+		return fmt.Sprintf("%s border-l-error", class)
+	default:
+		return fmt.Sprintf("%s border-l-info", class)
+	}
+}
+
+templ Toast(config ToastConfig) {
+	<div hx-swap-oob="beforeend:body">
+		<div
+			component="toast"
+			x-data={ fmt.Sprintf("toast({ durationMs: %d })", config.DurationMs) }
+			style="top: 2rem; right: -13rem;"
+			class={ toastClass(config) }
+		>
+			{ config.Message }
+		</div>
+	</div>
+}

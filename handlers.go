@@ -15,6 +15,8 @@ import (
 	"github.com/Kavantix/go-form/mails"
 	"github.com/Kavantix/go-form/resources"
 	"github.com/Kavantix/go-form/templates"
+	"github.com/Kavantix/go-form/templates/components"
+	"github.com/a-h/templ"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -329,7 +331,7 @@ func HandleResourceIndexStream[T any](resource resources.Resource[T]) func(c *gi
 		hasNextPage := true
 		page := 0
 		pageSize := 50
-		for hasNextPage && page < 5 {
+		for hasNextPage && page < 2 {
 			rows, err := resource.FetchPage(c.Request.Context(), page, pageSize)
 			if err != nil {
 				if !errors.Is(err, context.Canceled) {
@@ -347,7 +349,7 @@ func HandleResourceIndexStream[T any](resource resources.Resource[T]) func(c *gi
 				return
 			default:
 				templateEvent(c, "row",
-					templates.TableRows[T](resource.TableConfig(), rows),
+					templates.TableRows(resource.TableConfig(), rows),
 				)
 				sentry.StartSpan(c.Request.Context(), "mark", sentry.WithDescription("Sent first event")).Finish()
 				diff := time.Now().Sub(start)
@@ -370,33 +372,40 @@ func HandleResourceIndexStream[T any](resource resources.Resource[T]) func(c *gi
 type renderPartialOption uint8
 
 const (
-	RenderPartial = 1
-	RenderFull    = 0
+	RenderPartial renderPartialOption = 1
+	RenderFull    renderPartialOption = 0
 )
 
 func HandleResourceIndex[T any](resource resources.Resource[T], partialOption renderPartialOption) func(c *gin.Context) {
 	return func(c *gin.Context) {
-		page, pageSize, err := paginationParams(c)
-		if err != nil {
-			c.AbortWithError(400, err)
-			return
-		}
-		ctx, cancel := context.WithTimeout(c.Request.Context(), time.Millisecond*20)
-		defer cancel()
-		rows, err := resource.FetchPage(
-			ctx,
-			page, pageSize,
-		)
-		if err != nil && !errors.Is(err, context.DeadlineExceeded) {
-			c.AbortWithError(500, err)
-			return
-		}
-		if partialOption == RenderPartial {
-			template(c, 200, templates.ResourceOverviewPartial(resource, rows))
-		} else {
-			template(c, 200, templates.ResourceOverview(resource, rows))
-		}
+		handleResourceIndex(c, resource, partialOption)
 	}
+}
+
+func handleResourceIndex[T any](c *gin.Context, resource resources.Resource[T], partialOption renderPartialOption, extraTemplates ...templ.Component) {
+	page, pageSize, err := paginationParams(c)
+	if err != nil {
+		c.AbortWithError(400, err)
+		return
+	}
+	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Millisecond*20)
+	defer cancel()
+	rows, err := resource.FetchPage(
+		ctx,
+		page, pageSize,
+	)
+	if err != nil && !errors.Is(err, context.DeadlineExceeded) {
+		c.AbortWithError(500, err)
+		return
+	}
+	templatesToRender := []templ.Component{}
+	if partialOption == RenderPartial {
+		templatesToRender = append(templatesToRender, templates.ResourceOverviewPartial(resource, rows))
+	} else {
+		templatesToRender = append(templatesToRender, templates.ResourceOverview(resource, rows))
+	}
+	templatesToRender = append(templatesToRender, extraTemplates...)
+	template(c, 200, templatesToRender...)
 }
 
 func HandleResourceView[T any](resource resources.Resource[T]) func(c *gin.Context) {
@@ -470,7 +479,6 @@ func HandleValidateResource[T any](resource resources.Resource[T]) func(c *gin.C
 }
 
 func HandleCreateResource[T any](resource resources.Resource[T]) func(c *gin.Context) {
-	handleIndex := HandleResourceIndex(resource, RenderPartial)
 	return func(c *gin.Context) {
 		formFields := map[string]string{}
 		formConfig := resource.FormConfig()
@@ -486,11 +494,8 @@ func HandleCreateResource[T any](resource resources.Resource[T]) func(c *gin.Con
 		row, err := resource.ParseRow(c.Request.Context(), nil, formFields)
 		if err != nil {
 			if validationErr, ok := err.(resources.ValidationError); ok {
-				validationErrors := map[string]string{}
 				fmt.Printf("Failed to create %s: %s\n", resource.Title(), err)
 				validationErrors[validationErr.FieldName] = validationErr.Message
-				template(c, 422, templates.ResourceCreate(resource, row, validationErrors))
-				return
 			} else if parsingErr, ok := err.(resources.ParsingError); ok {
 				fmt.Printf("Failed to create %s: %s\n", resource.Title(), parsingErr)
 				template(c, 400, templates.ResourceCreate(resource, row, nil))
@@ -500,8 +505,15 @@ func HandleCreateResource[T any](resource resources.Resource[T]) func(c *gin.Con
 				return
 			}
 
-		} else if len(validationErrors) > 0 {
-			template(c, 422, templates.ResourceView(resource, row, validationErrors))
+		}
+		if len(validationErrors) > 0 {
+			template(c, 422,
+				templates.ResourceCreate(resource, row, validationErrors),
+				components.Toast(components.ToastConfig{
+					Message: "Not all fields are valid",
+					Variant: components.ToastError,
+				}),
+			)
 			return
 		}
 		id, err := resource.CreateRow(c.Request.Context(), row)
@@ -511,7 +523,7 @@ func HandleCreateResource[T any](resource resources.Resource[T]) func(c *gin.Con
 				fmt.Printf("Failed to create %s: %s\n", resource.Title(), err)
 				validationErrors["email"] = "Email already used"
 				c.Header("hx-replace-url", fmt.Sprintf("%s/create", resource.Location(nil)))
-				template(c, 422, templates.ResourceCreate(resource, row, validationErrors))
+				template(c, 200, templates.ResourceCreate(resource, row, validationErrors))
 				return
 			} else {
 				c.AbortWithError(500, err)
@@ -519,12 +531,14 @@ func HandleCreateResource[T any](resource resources.Resource[T]) func(c *gin.Con
 			}
 		}
 		fmt.Printf("Created %s with id %d\n", resource.Title(), id)
-		handleIndex(c)
+		handleResourceIndex(c, resource, RenderPartial, components.Toast(components.ToastConfig{
+			Message: fmt.Sprintf("Sucessfully created %s", resource.Title()),
+			Variant: components.ToastSuccess,
+		}))
 	}
 }
 
 func HandleUpdateResource[T any](resource resources.Resource[T]) func(c *gin.Context) {
-	handleIndex := HandleResourceIndex(resource, RenderPartial)
 	return func(c *gin.Context) {
 		id, err := strconv.Atoi(c.Param("id"))
 		if err != nil {
@@ -547,10 +561,8 @@ func HandleUpdateResource[T any](resource resources.Resource[T]) func(c *gin.Con
 			if validationErr, ok := err.(resources.ValidationError); ok {
 				fmt.Printf("Failed to update %s: %s\n", resource.Title(), validationErr)
 				validationErrors[validationErr.FieldName] = validationErr.Reason.Error()
-				template(c, 422, templates.ResourceView(resource, row, validationErrors))
-				return
 			} else if parsingErr, ok := err.(resources.ParsingError); ok {
-				fmt.Printf("Failed to create %s: %s\n", resource.Title(), parsingErr)
+				fmt.Printf("Failed to update %s: %s\n", resource.Title(), parsingErr)
 				template(c, 400, templates.ResourceCreate(resource, row, nil))
 				return
 			} else {
@@ -558,7 +570,13 @@ func HandleUpdateResource[T any](resource resources.Resource[T]) func(c *gin.Con
 				return
 			}
 		} else if len(validationErrors) > 0 {
-			template(c, 422, templates.ResourceView(resource, row, validationErrors))
+			template(c, 422,
+				templates.ResourceView(resource, row, validationErrors),
+				components.Toast(components.ToastConfig{
+					Message: "Not all fields are valid",
+					Variant: components.ToastError,
+				}),
+			)
 			return
 		}
 
@@ -566,9 +584,9 @@ func HandleUpdateResource[T any](resource resources.Resource[T]) func(c *gin.Con
 		if err != nil {
 			if err == database.ErrDuplicateEmail {
 				validationErrors := map[string]string{}
-				fmt.Printf("Failed to create %s: %s\n", resource.Title(), err)
+				fmt.Printf("Failed to update %s: %s\n", resource.Title(), err)
 				validationErrors["email"] = "Email already used"
-				template(c, 422, templates.ResourceView(resource, row, validationErrors))
+				template(c, 200, templates.ResourceView(resource, row, validationErrors))
 				return
 			} else {
 				c.AbortWithError(500, err)
@@ -576,6 +594,9 @@ func HandleUpdateResource[T any](resource resources.Resource[T]) func(c *gin.Con
 			}
 		}
 		c.Header("hx-push-url", resource.Location(nil))
-		handleIndex(c)
+		handleResourceIndex(c, resource, RenderPartial, components.Toast(components.ToastConfig{
+			Message: fmt.Sprintf("Sucessfully updated %s", resource.Title()),
+			Variant: components.ToastSuccess,
+		}))
 	}
 }
