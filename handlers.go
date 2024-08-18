@@ -369,20 +369,13 @@ func HandleResourceIndexStream[T any](resource resources.Resource[T]) func(c *gi
 	}
 }
 
-type renderPartialOption uint8
-
-const (
-	RenderPartial renderPartialOption = 1
-	RenderFull    renderPartialOption = 0
-)
-
-func HandleResourceIndex[T any](resource resources.Resource[T], partialOption renderPartialOption) func(c *gin.Context) {
+func HandleResourceIndex[T any](resource resources.Resource[T]) func(c *gin.Context) {
 	return func(c *gin.Context) {
-		handleResourceIndex(c, resource, partialOption)
+		handleResourceIndex(c, resource)
 	}
 }
 
-func handleResourceIndex[T any](c *gin.Context, resource resources.Resource[T], partialOption renderPartialOption, extraTemplates ...templ.Component) {
+func handleResourceIndex[T any](c *gin.Context, resource resources.Resource[T], extraTemplates ...templ.Component) {
 	page, pageSize, err := paginationParams(c)
 	if err != nil {
 		c.AbortWithError(400, err)
@@ -536,7 +529,7 @@ func HandleCreateResource[T any](resource resources.Resource[T]) func(c *gin.Con
 			}
 		}
 		fmt.Printf("Created %s with id %d\n", resource.Title(), id)
-		handleResourceIndex(c, resource, RenderPartial, components.Toast(components.ToastConfig{
+		handleResourceIndex(c, resource, components.Toast(components.ToastConfig{
 			Message: fmt.Sprintf("Sucessfully created %s", resource.Title()),
 			Variant: components.ToastSuccess,
 		}))
@@ -599,7 +592,7 @@ func HandleUpdateResource[T any](resource resources.Resource[T]) func(c *gin.Con
 			}
 		}
 		c.Header("hx-push-url", resource.Location(nil))
-		handleResourceIndex(c, resource, RenderPartial, components.Toast(components.ToastConfig{
+		handleResourceIndex(c, resource, components.Toast(components.ToastConfig{
 			Message: fmt.Sprintf("Sucessfully updated %s", resource.Title()),
 			Variant: components.ToastSuccess,
 		}))

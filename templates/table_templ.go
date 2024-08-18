@@ -196,7 +196,7 @@ func TableRow[T any](config TableConfig[T], row T) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" hx-target=\"main\" hx-trigger=\"mousedown\" hx-push-url=\"true\" class=\"cursor-pointer hover fade-in active:bg-sky-600 hover:active:bg-sky-900 transition-[background-color]\">")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" hx-target=\"main\" hx-trigger=\"mousedown[event.button == 0]\" hx-push-url=\"true\" class=\"cursor-pointer hover fade-in active:bg-sky-600 hover:active:bg-sky-900 transition-[background-color]\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -34,7 +34,7 @@ templ Button(config ButtonConfig) {
 			hx-get={ string(templ.URL(config.Href)) }
 			hx-target="main"
 			hx-push-url="true"
-			hx-trigger="mousedown"
+			hx-trigger="mousedown[event.button == 0]"
 			onclick="event.preventDefault()"
 			class={ "btn", config.typeClass() }
 		>

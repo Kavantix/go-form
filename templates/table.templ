@@ -58,7 +58,7 @@ templ TableRow[T any](config TableConfig[T], row T) {
 	<tr
 		hx-get={ config.RowUrl(row) }
 		hx-target="main"
-		hx-trigger="mousedown"
+		hx-trigger="mousedown[event.button == 0]"
 		hx-push-url="true"
 		class="cursor-pointer hover fade-in active:bg-sky-600 hover:active:bg-sky-900 transition-[background-color]"
 	>

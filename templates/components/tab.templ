@@ -12,7 +12,7 @@ templ Tab(url templ.SafeURL, isActive bool) {
 			hx-get={ string(url) }
 			hx-target="main"
 			hx-push-url="true"
-			hx-trigger="mousedown"
+			hx-trigger="mousedown[event.button == 0]"
 			href={ url }
 			if isActive {
 				class={ activeTab }
