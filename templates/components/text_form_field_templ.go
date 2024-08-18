@@ -190,7 +190,7 @@ func TextFormField[T any](form FormConfig[T], config *TextFormFieldConfig[T], va
 }
 
 func (f *TextFormFieldConfig[T]) RenderFormField(form FormConfig[T], value *T) templ.Component {
-	return TextFormField[T](form, f, value)
+	return TextFormField(form, f, value)
 }
 
 func (f *TextFormFieldConfig[T]) Name() string {

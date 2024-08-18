@@ -25,7 +25,10 @@ templ ResourceView[T any](resource resources.Resource[T], row *T, validationErro
 			<span>Save</span>
 			<div class="inline-block htmx-indicator"></div>
 		}
-		@components.Button(components.ButtonConfig{Hget: resource.Location(nil), Type: components.ButtonSecondary}) {
+		@components.Button(components.ButtonConfig{
+			Hget: resource.Location(nil), Type: components.ButtonSecondary,
+			NotReversible: true,
+		}) {
 			Cancel
 		}
 	}
@@ -38,7 +41,10 @@ templ ResourceCreate[T any](resource resources.Resource[T], row *T, validationEr
 			<span>Save</span>
 			<div class="inline-block htmx-indicator"></div>
 		}
-		@components.Button(components.ButtonConfig{Hget: resource.Location(nil), Type: components.ButtonSecondary}) {
+		@components.Button(components.ButtonConfig{
+			Hget: resource.Location(nil), Type: components.ButtonSecondary,
+			NotReversible: true,
+		}) {
 			Cancel
 		}
 	}

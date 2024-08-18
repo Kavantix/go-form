@@ -14,9 +14,10 @@ const (
 )
 
 type ButtonConfig struct {
-	Href string
-	Hget string
-	Type ButtonType
+	Href          string
+	Hget          string
+	Type          ButtonType
+	NotReversible bool
 }
 
 func (c ButtonConfig) typeClass() string {
@@ -35,8 +36,10 @@ templ Button(config ButtonConfig) {
 			hx-get={ string(templ.URL(config.Href)) }
 			hx-target="main"
 			hx-push-url="true"
-			hx-trigger="mousedown[event.button == 0 && !event.metaKey]"
-			onclick="event.metaKey || event.preventDefault()"
+			if !config.NotReversible {
+				hx-trigger="mousedown[event.button == 0 && !event.metaKey]"
+				onclick="event.metaKey || event.preventDefault()"
+			}
 			class={ "btn", config.typeClass() }
 		>
 			{ children... }
@@ -47,8 +50,10 @@ templ Button(config ButtonConfig) {
 				hx-get={ string(templ.URL(config.Hget)) }
 				hx-target="main"
 				hx-push-url="true"
-				hx-trigger="mousedown[event.button == 0]"
-				onclick="event.preventDefault()"
+				if !config.NotReversible {
+					hx-trigger="mousedown[event.button == 0]"
+					onclick="event.metaKey"
+				}
 			}
 			class={ "btn", config.typeClass() }
 		>

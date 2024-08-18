@@ -149,7 +149,10 @@ func ResourceView[T any](resource resources.Resource[T], row *T, validationError
 				}
 				return templ_7745c5c3_Err
 			})
-			templ_7745c5c3_Err = components.Button(components.ButtonConfig{Hget: resource.Location(nil), Type: components.ButtonSecondary}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var6), templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = components.Button(components.ButtonConfig{
+				Hget: resource.Location(nil), Type: components.ButtonSecondary,
+				NotReversible: true,
+			}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var6), templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -188,7 +191,7 @@ func ResourceCreate[T any](resource resources.Resource[T], row *T, validationErr
 		var templ_7745c5c3_Var8 string
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(resource.Title())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/resource.templ`, Line: 35, Col: 60}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/resource.templ`, Line: 38, Col: 60}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
@@ -254,7 +257,10 @@ func ResourceCreate[T any](resource resources.Resource[T], row *T, validationErr
 				}
 				return templ_7745c5c3_Err
 			})
-			templ_7745c5c3_Err = components.Button(components.ButtonConfig{Hget: resource.Location(nil), Type: components.ButtonSecondary}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var11), templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = components.Button(components.ButtonConfig{
+				Hget: resource.Location(nil), Type: components.ButtonSecondary,
+				NotReversible: true,
+			}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var11), templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
