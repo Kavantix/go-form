@@ -165,11 +165,13 @@ templ TabBar(currentTab string, swapOob bool) {
 }
 
 templ body(currentTab string) {
-	<body class="flex flex-col h-full">
-		@TabBar(currentTab, false)
-		<main class="overflow-y-auto h-full">
-			{ children... }
-		</main>
+	<body>
+		<div class="flex flex-col h-full">
+			@TabBar(currentTab, false)
+			<main class="overflow-y-auto h-full">
+				{ children... }
+			</main>
+		</div>
 		<div id="relogin"></div>
 	</body>
 }
