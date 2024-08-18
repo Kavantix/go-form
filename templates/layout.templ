@@ -113,9 +113,7 @@ templ wrapWithHeadIfNeeded() {
 	} else {
 		<html>
 			@Head()
-			<div>
-				{ children... }
-			</div>
+			{ children... }
 			<script>
       document.body.addEventListener('htmx:beforeSwap', function(evt) {
           if(evt.detail.xhr.status === 422){
@@ -145,14 +143,14 @@ templ Layout(currentTab string, childs ...templ.Component) {
 }
 
 templ TabBar(currentTab string, swapOob bool) {
-	<div
+	<header
 		id="tabbar"
 		if swapOob {
 			hx-swap-oob="true"
 		}
 		class="text-sm font-medium text-center text-gray-500 border-b border-gray-200 dark:text-gray-400 dark:border-gray-700"
 	>
-		<ul class="flex flex-wrap -mb-px">
+		<ul class="flex flex-wrap -mb-px gap-2">
 			@Tab("/users", currentTab == "/users") {
 				Users 
 			}
@@ -163,13 +161,13 @@ templ TabBar(currentTab string, swapOob bool) {
 				Logout
 			}
 		</ul>
-	</div>
+	</header>
 }
 
 templ body(currentTab string) {
-	<body>
+	<body class="flex flex-col h-full">
 		@TabBar(currentTab, false)
-		<main>
+		<main class="overflow-y-auto h-full">
 			{ children... }
 		</main>
 		<div id="relogin"></div>

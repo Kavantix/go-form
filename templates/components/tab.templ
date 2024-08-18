@@ -6,7 +6,7 @@ var (
 )
 
 templ Tab(url templ.SafeURL, isActive bool) {
-	<li class="mr-2">
+	<li>
 		<a
 			onclick="event.preventDefault()"
 			hx-get={ string(url) }

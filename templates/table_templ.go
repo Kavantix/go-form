@@ -31,7 +31,7 @@ func Table[T any](config TableConfig[T], rows []T) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"pb-4 px-4 rounded-md w-full\"><div class=\"flex justify-between items-center w-full pt-6 \"><h1 class=\"mx-4 text-xl flex items-center gap-2\">")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"px-4 rounded-md size-full flex flex-col\"><div class=\"flex justify-between items-center w-full pt-6 \"><h1 class=\"mx-4 text-xl flex items-center gap-2\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -98,7 +98,7 @@ func Table[T any](config TableConfig[T], rows []T) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div><div class=\"w-full flex justify-start px-2 mt-2\"><div class=\"overflow-x-auto mt-6 w-full\"><table class=\"table table-lg w-full\"><thead><tr style=\"font-size: 0.9674rem\">")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div><div class=\"size-full overflow-y-auto flex justify-start px-2\"><div class=\"overflow-x-auto pb-4 mt-2 w-full\"><table class=\"table table-lg w-full\"><thead><tr style=\"font-size: 0.9674rem\" class=\"sticky top-0 bg-base-200\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

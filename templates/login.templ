@@ -12,7 +12,7 @@ templ Login(email string) {
 }
 
 templ LoginForm(email string) {
-	<form method="POST" class="h-full w-full flex justify-center items-center flex-col gap-2">
+	<form hx-post="/login" class="h-full w-full flex justify-center items-center flex-col gap-2">
 		<div>
 			<label for="email">Email</label>
 			@components.TextField(true, "email", "email", "Email", email)
