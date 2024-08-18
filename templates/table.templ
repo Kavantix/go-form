@@ -56,14 +56,23 @@ templ TableRows[T any](config TableConfig[T], rows []T) {
 
 templ TableRow[T any](config TableConfig[T], row T) {
 	<tr
-		hx-get={ config.RowUrl(row) }
-		hx-target="main"
-		hx-trigger="mousedown[event.button == 0]"
-		hx-push-url="true"
 		class="cursor-pointer hover fade-in active:bg-sky-600 hover:active:bg-sky-900 transition-[background-color]"
+		hx-target="main"
+		hx-push-url="true"
 	>
 		for _, column := range config.Columns() {
-			<td class="py-0 px-4"><div class="py-4">{ column.Value(row) }</div></td>
+			<td class="p-0">
+				<a
+					href={ templ.SafeURL(config.RowUrl(row)) }
+					hx-get={ string(templ.SafeURL(config.RowUrl(row))) }
+					hx-trigger="mousedown[event.button == 0 && !event.metaKey]"
+					onclick="event.metaKey || event.preventDefault()"
+				>
+					<div class="p-4">
+						{ column.Value(row) }
+					</div>
+				</a>
+			</td>
 		}
 	</tr>
 }

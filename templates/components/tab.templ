@@ -8,11 +8,11 @@ var (
 templ Tab(url templ.SafeURL, isActive bool) {
 	<li>
 		<a
-			onclick="event.preventDefault()"
 			hx-get={ string(url) }
 			hx-target="main"
 			hx-push-url="true"
-			hx-trigger="mousedown[event.button == 0]"
+			hx-trigger="mousedown[event.button == 0 && !event.metaKey]"
+			onclick="event.metaKey || event.preventDefault()"
 			href={ url }
 			if isActive {
 				class={ activeTab }
