@@ -398,11 +398,8 @@ func handleResourceIndex[T any](c *gin.Context, resource resources.Resource[T], 
 		c.AbortWithError(500, err)
 		return
 	}
-	templatesToRender := []templ.Component{}
-	if partialOption == RenderPartial {
-		templatesToRender = append(templatesToRender, templates.ResourceOverviewPartial(resource, rows))
-	} else {
-		templatesToRender = append(templatesToRender, templates.ResourceOverview(resource, rows))
+	templatesToRender := []templ.Component{
+		templates.ResourceOverview(resource, rows),
 	}
 	templatesToRender = append(templatesToRender, extraTemplates...)
 	template(c, 200, templatesToRender...)
@@ -420,13 +417,21 @@ func HandleResourceView[T any](resource resources.Resource[T]) func(c *gin.Conte
 			template(c, 404, templates.NotFound(resource.Location(nil)))
 			return
 		}
-		templateInLayout(c, 200, resource.Location(nil), templates.ResourceView(resource, row, nil))
+		if templates.IsHtmx(c.Request.Context()) {
+			template(c, 200, templates.ResourceView(resource, row, nil))
+		} else {
+			templateInLayout(c, 200, resource.Location(nil), templates.ResourceView(resource, row, nil))
+		}
 	}
 }
 
 func HandleResourceCreate[T any](resource resources.Resource[T]) func(c *gin.Context) {
 	return func(c *gin.Context) {
-		templateInLayout(c, 200, resource.Location(nil), templates.ResourceCreate(resource, nil, map[string]string{}))
+		if templates.IsHtmx(c.Request.Context()) {
+			template(c, 200, templates.ResourceCreate(resource, nil, map[string]string{}))
+		} else {
+			templateInLayout(c, 200, resource.Location(nil), templates.ResourceView(resource, nil, map[string]string{}))
+		}
 	}
 }
 

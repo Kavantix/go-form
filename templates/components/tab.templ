@@ -10,7 +10,7 @@ templ Tab(url templ.SafeURL, isActive bool) {
 		<a
 			onclick="event.preventDefault()"
 			hx-get={ string(url) }
-			hx-target="body"
+			hx-target="main"
 			hx-push-url="true"
 			hx-trigger="mousedown"
 			href={ url }

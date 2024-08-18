@@ -4,6 +4,7 @@ import (
 	"context"
 	"embed"
 	"fmt"
+	"github.com/Kavantix/go-form/database"
 	"io/fs"
 	"log"
 	"net/http"
@@ -11,7 +12,6 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/Kavantix/go-form/database"
 	"github.com/Kavantix/go-form/interfaces"
 	"github.com/Kavantix/go-form/resources"
 	"github.com/Kavantix/go-form/templates"
@@ -110,6 +110,13 @@ func setIsHtmx(c *gin.Context) {
 	isHtmx := c.GetHeader("HX-Request") == "true"
 	ctx := context.WithValue(c.Request.Context(), "isHtmx", isHtmx)
 	c.Set("isHtmx", isHtmx)
+	if isHtmx {
+		currentUrl, err := url.Parse(c.GetHeader("HX-Current-URL"))
+		if err == nil {
+			ctx = context.WithValue(ctx, "currentUrl", currentUrl)
+			c.Set("currentUrl", currentUrl)
+		}
+	}
 	*c.Request = *c.Request.WithContext(ctx)
 	c.Next()
 }

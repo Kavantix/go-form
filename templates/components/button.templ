@@ -32,7 +32,7 @@ templ Button(config ButtonConfig) {
 		<a
 			href={ templ.URL(config.Href) }
 			hx-get={ string(templ.URL(config.Href)) }
-			hx-target="body"
+			hx-target="main"
 			hx-push-url="true"
 			hx-trigger="mousedown"
 			onclick="event.preventDefault()"

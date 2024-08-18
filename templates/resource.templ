@@ -3,16 +3,20 @@ package templates
 import (
 	"github.com/Kavantix/go-form/resources"
 	"github.com/Kavantix/go-form/templates/components"
+	"strings"
 )
 
 templ ResourceOverview[T any](resource resources.Resource[T], rows []T) {
-	@Layout(resource.Location(nil)) {
-		@ResourceOverviewPartial(resource, rows)
+	if IsHtmx(ctx) {
+		@Table(resource.TableConfig(), rows)
+		if !strings.HasPrefix(CurrentUrl(ctx).Path, resource.Location(nil)) {
+			@TabBar(resource.Location(nil), true)
+		}
+	} else {
+		@Layout(resource.Location(nil)) {
+			@Table(resource.TableConfig(), rows)
+		}
 	}
-}
-
-templ ResourceOverviewPartial[T any](resource resources.Resource[T], rows []T) {
-	@Table(resource.TableConfig(), rows)
 }
 
 templ ResourceView[T any](resource resources.Resource[T], row *T, validationErrors map[string]string) {
