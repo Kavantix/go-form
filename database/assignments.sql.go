@@ -82,6 +82,7 @@ const getAssignmentsPage = `-- name: getAssignmentsPage :many
 select
   id, name, "order", created_at, updated_at, type
 from assignments
+order by "order"
 limit $1 offset $2
 `
 

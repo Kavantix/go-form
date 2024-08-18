@@ -8,6 +8,7 @@ where id = $1;
 select
   *
 from assignments
+order by "order"
 limit $1 offset $2;
 
 -- name: InsertAssignment :one
