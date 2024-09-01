@@ -1,25 +1,35 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io/fs"
 	"log"
+	"log/slog"
+	"net/http"
 
 	"github.com/Kavantix/go-form/auth"
 	"github.com/Kavantix/go-form/database"
 	"github.com/Kavantix/go-form/mails"
-	sentrygin "github.com/getsentry/sentry-go/gin"
-	"github.com/gin-contrib/gzip"
-	"github.com/gin-gonic/gin"
+	"github.com/Kavantix/go-form/pkg/env"
+	"github.com/Kavantix/go-form/pkg/logger"
+	"github.com/getsentry/sentry-go"
+	sentryhttp "github.com/getsentry/sentry-go/http"
 	"github.com/joho/godotenv"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 
 	_ "github.com/lib/pq"
 )
 
 func main() {
-	log.Println("Starting...")
+	ctx := context.Background()
 	isProduction := IsProduction(LookupEnv("ENVIRONMENT", "dev") == "production")
+
+	logger.InitGoogleCloudLogger()
+
+	log.Println("Starting...")
 	err := godotenv.Load()
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		log.Fatalf("Error loading .env file:\n%s\n", err)
@@ -54,16 +64,35 @@ func main() {
 	// 	IncludeValues: false,
 	// })
 
-	gin.SetMode(gin.ReleaseMode)
-
 	log.Println("Configuring routes...")
-	r := gin.Default()
-	r.UseH2C = true
-	r.Use(sentrygin.New(sentrygin.Options{
-		Repanic: true,
-	}))
-	r.SetTrustedProxies([]string{})
-	r.Use(gzip.Gzip(gzip.BestSpeed))
+	r := echo.New()
+	logger.SetupEchoGoogleCloudLogger(r, env.Lookup("PROJECT_ID", "eighth-gamma-414620"))
+	r.Use(echo.WrapMiddleware(sentryhttp.New(sentryhttp.Options{Repanic: true}).Handle))
+	r.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		// Add extra middleware for sentry since default implementation does not add the status to the transaction
+		return func(c echo.Context) error {
+			transaction := sentry.TransactionFromContext(c.Request().Context())
+			var err error
+			if transaction != nil {
+				defer func() {
+					transaction.Status = sentry.HTTPtoSpanStatus(c.Response().Status)
+					if err != nil {
+						//  this block should not be executed in case of HandleError=true as the global error handler will decide
+						//  the status code. In that case status code could be different from what err contains.
+						var httpErr *echo.HTTPError
+						if errors.As(err, &httpErr) {
+							transaction.Status = sentry.HTTPtoSpanStatus(httpErr.Code)
+						}
+					}
+
+				}()
+			}
+			err = next(c)
+			return err
+		}
+	})
+
+	r.Use(middleware.Gzip())
 
 	RegisterRoutes(
 		r,
@@ -79,7 +108,14 @@ func main() {
 		MailhogPassword(MustLookupEnv("MAILHOG_PASSWORD")),
 	)
 
+	host := env.Lookup("HOST", "0.0.0.0")
 	port := LookupEnv("PORT", "80")
-	log.Printf("Listening op port %s\n", port)
-	log.Fatalln(r.Run(fmt.Sprintf(":%s", port)))
+	addr := fmt.Sprintf("%s:%s", host, port)
+	logger.Info(ctx, fmt.Sprintf("Listening on %s", addr), slog.String("addr", addr))
+	r.HideBanner = true
+	r.HidePort = true
+	if err := r.Start(addr); err != nil && err != http.ErrServerClosed {
+		fmt.Printf("server failed: %s\n", err)
+	}
+
 }

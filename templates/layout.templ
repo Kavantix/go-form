@@ -29,8 +29,8 @@ script initSentry(dsn string) {
 templ Head() {
 	<head>
 		<title>Go Form Example</title>
-		<script src="https://unpkg.com/htmx.org@1.9.10/dist/htmx.min.js" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>
-		<script src="https://unpkg.com/htmx.org@1.9.10/dist/ext/sse.js" integrity="sha384-jlVlI/i5K5APUIz8cxowC1/FsCEZgsrg126wue89Np9N75pQdAzqkYYP+jsUi43W" crossorigin="anonymous"></script>
+		<script src="https://unpkg.com/htmx.org@2.0.2/dist/htmx.min.js" crossorigin="anonymous"></script>
+		<script src="https://unpkg.com/htmx-ext-sse@2.2.2/sse.js" crossorigin="anonymous"></script>
 		<script defer src="https://unpkg.com/alpinejs@3.13.5/dist/cdn.min.js" integrity="sha384-BxpSbjbDhVKwnC1UfcjsNEuMuxg4af5IXOaSi1Iq5rASQ/9a7uslhEXbP9UI/fXo" crossorigin="anonymous"></script>
 		<link href="https://cdn.jsdelivr.net/npm/daisyui@4.6.0/dist/full.min.css" rel="stylesheet" type="text/css"/>
 		<link href="/css/main.css" rel="stylesheet" type="text/css"/>
@@ -122,6 +122,7 @@ templ wrapWithHeadIfNeeded() {
           // errors
           //
           // set isError to false to avoid error logging in console
+          console.log('beforeswap', evt)
           evt.detail.shouldSwap = true;
           evt.detail.isError = false;
           } 
@@ -173,6 +174,67 @@ templ body(currentTab string) {
 			</main>
 		</div>
 		<div id="relogin"></div>
+		<div
+			id="toast-container"
+			x-data="{ 
+        toasts: [],
+        toastClass(variant) {
+          switch (variant) {
+            case 'success':
+              return 'border-l-success'
+            case 'error':
+              return 'border-l-error'
+            default:
+              return 'border-l-info'
+          }
+        }
+      }"
+			class="absolute top-8 right-4 max-w-52 flex flex-col gap-3"
+			@show-toast="
+      let ts = new Date().toISOString()
+      let toast = {
+      ...$event.detail,
+        ts: ts
+      }
+      toasts = [toast, ...toasts]
+      setTimeout(() => toasts.forEach(toast => {
+          if (toast.ts === ts) {
+              toast.show = true
+            }
+        }), 100);
+      "
+		>
+			<template x-for="toast in toasts" :key="toast.ts">
+				<div
+					class="bg-base-300 border-l-8 text-base-content px-4 py-2 transition-transform duration-300"
+					:class="[
+            toastClass(toast.variant),
+            toast.show ? 'translate-x-0' : 'translate-x-[130%]',
+          ]"
+					x-text="toast.message"
+				></div>
+			</template>
+		</div>
+	</body>
+}
+
+templ ServerFailure(redirect string) {
+	@wrapWithHeadIfNeeded() {
+		@serverFailure(redirect)
+	}
+}
+
+templ serverFailure(redirect string) {
+	<body hx-boost="true">
+		<div class="h-full w-full flex justify-center items-center flex-col gap-2">
+			<h1>Something went wrong</h1>
+			<p>
+				Please try again later or refresh the page.
+			</p>
+			@Button(ButtonConfig{Href: redirect}) {
+				Go back
+			}
+		</div>
 	</body>
 }
 

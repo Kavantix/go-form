@@ -2,31 +2,33 @@ package main
 
 import (
 	"context"
+	"crypto/subtle"
 	"embed"
 	"fmt"
-	"github.com/Kavantix/go-form/database"
 	"io/fs"
 	"log"
-	"net/http"
-	"net/http/httputil"
 	"net/url"
 	"strconv"
+
+	"github.com/Kavantix/go-form/database"
 
 	"github.com/Kavantix/go-form/interfaces"
 	"github.com/Kavantix/go-form/resources"
 	"github.com/Kavantix/go-form/templates"
 	"github.com/getsentry/sentry-go"
-	"github.com/gin-gonic/gin"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 type IsProduction bool
 type MailhogHost string
 type MailhogUser string
 type MailhogPassword string
-type GetUserFunc func(c *gin.Context) (*database.DisplayableUser, error)
+type GetUserFunc func(c echo.Context) (*database.DisplayableUser, error)
 
+type echoGroup = echo.Group
 type AuthenticatedGroup struct {
-	*gin.RouterGroup
+	*echoGroup
 }
 
 //go:embed public/js
@@ -36,7 +38,7 @@ var publicJsFs embed.FS
 var publicCssFs embed.FS
 
 func RegisterRoutes(
-	r *gin.Engine,
+	r *echo.Echo,
 	disk interfaces.Disk,
 	isProduction IsProduction,
 	queries *database.Queries,
@@ -46,132 +48,150 @@ func RegisterRoutes(
 	if err != nil {
 		log.Fatalf("Failed to create public js dir: %s\n", err)
 	}
-	r.StaticFS("/js", http.FS(jsDir))
+	r.StaticFS("/js", jsDir)
 	cssDir, err := fs.Sub(publicCssFs, "public/css")
 	if err != nil {
 		log.Fatalf("Failed to create public css dir: %s\n", err)
 	}
-	r.StaticFS("/css", http.FS(cssDir))
+	r.StaticFS("/css", cssDir)
 	r.Use(setIsHtmx)
-	r.POST("/upload", HandleUploadFile(disk))
-	if disk, ok := disk.(interfaces.DirectUploadDisk); ok {
-		r.GET("/upload-url", HandleGetUploadUrl(disk))
-	}
+	// r.POST("/upload", HandleUploadFile(disk))
+	// if disk, ok := disk.(interfaces.DirectUploadDisk); ok {
+	// 	r.GET("/upload-url", HandleGetUploadUrl(disk))
+	// }
 	r.Use(handleUnauthenticated)
 	r.GET("/loginlink", HandleLoginLink(bool(isProduction), queries))
 	authenticated, getUser := setupAuthenticatedGroup(r, queries)
-	authenticated.GET("/users/me", func(c *gin.Context) {
-		user, err := getUser(c)
+	authenticated.GET("/users/me", func(e echo.Context) error {
+		user, err := getUser(e)
 		if err != nil {
-			return
+			return err
 		}
-		c.IndentedJSON(200, user)
+		return e.JSONPretty(200, user, "  ")
 	})
-	r.GET("/logout", func(c *gin.Context) {
-		c.SetCookie("goform_auth", "", -1, "", "", false, true)
-		c.Set("Unauthenticated", true)
-	})
+	r.GET("/logout", HandleLogout())
 	r.GET("/login", HandleLogin(queries))
 	r.POST("/login", HandlePostLogin(queries))
-	r.GET("/relogin", HandleRelogin(queries))
-	r.PUT("/relogin", HandlePutRelogin(bool(isProduction), queries))
+	// r.GET("/relogin", HandleRelogin(queries))
+	// r.PUT("/relogin", HandlePutRelogin(bool(isProduction), queries))
 
 	RegisterResource(authenticated, resources.NewUserResource(queries))
 	RegisterResource(authenticated, resources.NewAssignmentResource(queries))
 
-	r.GET("/", func(c *gin.Context) {
-		c.Redirect(302, "/users")
+	r.GET("/", func(c echo.Context) error {
+		return c.Redirect(302, "/users")
 	})
-	r.NoRoute(func(c *gin.Context) {
-		template(c, 404, templates.NotFound("/users"))
+	r.RouteNotFound("/*", func(c echo.Context) error {
+		return template(c, 404, templates.NotFound("/users"))
 	})
-
+	r.HTTPErrorHandler = func(err error, c echo.Context) {
+		hub := sentry.GetHubFromContext(c.Request().Context())
+		hub.CaptureException(fmt.Errorf("request failed: %w", err))
+		template(c, 500, templates.ServerFailure("/users"))
+	}
 }
 
 func RegisterMailhogProxy(
-	r *gin.Engine,
+	r *echo.Echo,
 	host MailhogHost,
-	user MailhogUser,
-	password MailhogPassword,
+	correctUser MailhogUser,
+	correctPassword MailhogPassword,
 ) {
 	mailhogUrl, err := url.Parse(fmt.Sprintf("http://%s:8025", host))
 	if err != nil {
 		log.Fatalf("Failed to construct mailhog url: %s\n", err)
 	}
-	mailhogProxy := httputil.NewSingleHostReverseProxy(mailhogUrl)
-	mailhogBasicAuth := gin.BasicAuth(gin.Accounts{
-		string(user): string(password),
-	})
-	r.Any("/mailhog/*path", mailhogBasicAuth, gin.WrapH(mailhogProxy))
+	r.Group("/mailhog", middleware.BasicAuth(func(username, password string, ctx echo.Context) (bool, error) {
+		if subtle.ConstantTimeCompare([]byte(username), []byte(correctUser)) == 1 &&
+			subtle.ConstantTimeCompare([]byte(password), []byte(correctPassword)) == 1 {
+			return true, nil
+		}
+		return false, nil
+	}),
+		middleware.Proxy(middleware.NewRoundRobinBalancer([]*middleware.ProxyTarget{
+			{
+				URL: mailhogUrl,
+			},
+		})),
+	)
 
 }
 
-func setIsHtmx(c *gin.Context) {
-	isHtmx := c.GetHeader("HX-Request") == "true"
-	ctx := context.WithValue(c.Request.Context(), "isHtmx", isHtmx)
-	c.Set("isHtmx", isHtmx)
-	if isHtmx {
-		currentUrl, err := url.Parse(c.GetHeader("HX-Current-URL"))
-		if err == nil {
-			ctx = context.WithValue(ctx, "currentUrl", currentUrl)
-			c.Set("currentUrl", currentUrl)
-		}
-	}
-	*c.Request = *c.Request.WithContext(ctx)
-	c.Next()
-}
-
-func handleUnauthenticated(c *gin.Context) {
-	c.Next()
-	if c.GetBool("Unauthenticated") {
-		if c.GetBool("isHtmx") {
-			if c.FullPath() == "/logout" {
-				htmxRedirect(c, "/login")
-				return
+func setIsHtmx(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		isHtmx := c.Request().Header.Get("HX-Request") == "true"
+		ctx := context.WithValue(c.Request().Context(), "isHtmx", isHtmx)
+		c.Set("isHtmx", isHtmx)
+		if isHtmx {
+			currentUrl, err := url.Parse(c.Request().Header.Get("HX-Current-URL"))
+			if err == nil {
+				ctx = context.WithValue(ctx, "currentUrl", currentUrl)
+				c.Set("currentUrl", currentUrl)
 			}
-			_, err := tryGetUserIdFromCookie(c, true)
-			if err != nil {
-				htmxRedirect(c, "/login")
-				return
-			}
-			c.Header("HX-Reswap", "innerHTML show:top")
-			c.Header("HX-Retarget", "#relogin")
-			template(c, 422, templates.SessionExpired())
-		} else {
-			c.Redirect(302, "/login")
 		}
+		c.SetRequest(c.Request().WithContext(ctx))
+		return next(c)
 	}
 }
 
-func setupAuthenticatedGroup(r *gin.Engine, queries *database.Queries) (AuthenticatedGroup, GetUserFunc) {
-	group := r.Group("", func(c *gin.Context) {
-		userId, err := tryGetUserIdFromCookie(c, false)
-		if err != nil {
-			c.Set("Unauthenticated", true)
-			c.Abort()
-			return
-		}
-		hub := sentry.GetHubFromContext(c.Request.Context())
-		hub.Scope().SetUser(sentry.User{
-			ID: strconv.Itoa(int(userId)),
-		})
-		var user *database.DisplayableUser
-		c.Set("GetUser", func() (*database.DisplayableUser, error) {
-			if user == nil {
-				*user, err = queries.GetUser(c.Request.Context(), userId)
-				if err != nil {
-					return nil, err
+func isHtmx(c echo.Context) bool {
+	isHtmx, ok := c.Get("isHtmx").(bool)
+	return ok && isHtmx
+}
+
+func handleUnauthenticated(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		handlerErr := next(c)
+		_, hasUnauthenticated := c.Get("Unauthenticated").(bool)
+		if hasUnauthenticated {
+			if isHtmx(c) {
+				if c.Path() == "/logout" {
+					return htmxRedirect(c, "/login")
 				}
+				_, err := tryGetUserIdFromCookie(c, true)
+				if err != nil {
+					return htmxRedirect(c, "/login")
+				}
+				c.Response().Header().Set("HX-Reswap", "innerHTML show:top")
+				c.Response().Header().Set("HX-Retarget", "#relogin")
+				return template(c, 422, templates.SessionExpired())
+			} else {
+				return c.Redirect(302, "/login")
 			}
-			return user, err
-		})
-		c.Next()
+		}
+		return handlerErr
+	}
+}
+
+func setupAuthenticatedGroup(r *echo.Echo, queries *database.Queries) (AuthenticatedGroup, GetUserFunc) {
+	group := r.Group("", func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			userId, err := tryGetUserIdFromCookie(c, false)
+			if err != nil {
+				c.Set("Unauthenticated", true)
+				return nil
+			}
+			hub := sentry.GetHubFromContext(c.Request().Context())
+			hub.Scope().SetUser(sentry.User{
+				ID: strconv.Itoa(int(userId)),
+			})
+			var user *database.DisplayableUser
+			c.Set("GetUser", func() (*database.DisplayableUser, error) {
+				if user == nil {
+					*user, err = queries.GetUser(c.Request().Context(), userId)
+					if err != nil {
+						return nil, err
+					}
+				}
+				return user, err
+			})
+			return next(c)
+		}
 	})
-	getUser := func(c *gin.Context) (*database.DisplayableUser, error) {
-		user, err := c.MustGet("GetUser").(func() (*database.DisplayableUser, error))()
+	getUser := func(c echo.Context) (*database.DisplayableUser, error) {
+		user, err := c.Get("GetUser").(func() (*database.DisplayableUser, error))()
 		if err != nil {
-			c.AbortWithError(500, err)
-			return nil, err
+			return nil, fmt.Errorf("failed to get user: %w", err)
 		}
 		return user, nil
 	}

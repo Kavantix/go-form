@@ -58,7 +58,7 @@ func Head() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<head><title>Go Form Example</title><script src=\"https://unpkg.com/htmx.org@1.9.10/dist/htmx.min.js\" integrity=\"sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC\" crossorigin=\"anonymous\"></script><script src=\"https://unpkg.com/htmx.org@1.9.10/dist/ext/sse.js\" integrity=\"sha384-jlVlI/i5K5APUIz8cxowC1/FsCEZgsrg126wue89Np9N75pQdAzqkYYP+jsUi43W\" crossorigin=\"anonymous\"></script><script defer src=\"https://unpkg.com/alpinejs@3.13.5/dist/cdn.min.js\" integrity=\"sha384-BxpSbjbDhVKwnC1UfcjsNEuMuxg4af5IXOaSi1Iq5rASQ/9a7uslhEXbP9UI/fXo\" crossorigin=\"anonymous\"></script><link href=\"https://cdn.jsdelivr.net/npm/daisyui@4.6.0/dist/full.min.css\" rel=\"stylesheet\" type=\"text/css\"><link href=\"/css/main.css\" rel=\"stylesheet\" type=\"text/css\"><script src=\"https://browser.sentry-cdn.com/7.100.1/bundle.tracing.min.js\" integrity=\"sha384-qDHTQsvbyIJZnxDsxk/o7/rgkA/DS8Rjg+HWqi7QyCEDW0x8K2N7XT9NBXdFpivP\" crossorigin=\"anonymous\"></script><script src=\"/js/app.js\"></script><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<head><title>Go Form Example</title><script src=\"https://unpkg.com/htmx.org@2.0.2/dist/htmx.min.js\" crossorigin=\"anonymous\"></script><script src=\"https://unpkg.com/htmx-ext-sse@2.2.2/sse.js\" crossorigin=\"anonymous\"></script><script defer src=\"https://unpkg.com/alpinejs@3.13.5/dist/cdn.min.js\" integrity=\"sha384-BxpSbjbDhVKwnC1UfcjsNEuMuxg4af5IXOaSi1Iq5rASQ/9a7uslhEXbP9UI/fXo\" crossorigin=\"anonymous\"></script><link href=\"https://cdn.jsdelivr.net/npm/daisyui@4.6.0/dist/full.min.css\" rel=\"stylesheet\" type=\"text/css\"><link href=\"/css/main.css\" rel=\"stylesheet\" type=\"text/css\"><script src=\"https://browser.sentry-cdn.com/7.100.1/bundle.tracing.min.js\" integrity=\"sha384-qDHTQsvbyIJZnxDsxk/o7/rgkA/DS8Rjg+HWqi7QyCEDW0x8K2N7XT9NBXdFpivP\" crossorigin=\"anonymous\"></script><script src=\"/js/app.js\"></script><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -110,7 +110,7 @@ func wrapWithHeadIfNeeded() templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<script>\n      document.body.addEventListener('htmx:beforeSwap', function(evt) {\n          if(evt.detail.xhr.status === 422){\n          // allow 422 responses to swap as we are using this as a signal that\n          // a form was submitted with bad data and want to rerender with the\n          // errors\n          //\n          // set isError to false to avoid error logging in console\n          evt.detail.shouldSwap = true;\n          evt.detail.isError = false;\n          } \n          });\n    </script></html>")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<script>\n      document.body.addEventListener('htmx:beforeSwap', function(evt) {\n          if(evt.detail.xhr.status === 422){\n          // allow 422 responses to swap as we are using this as a signal that\n          // a form was submitted with bad data and want to rerender with the\n          // errors\n          //\n          // set isError to false to avoid error logging in console\n          console.log('beforeswap', evt)\n          evt.detail.shouldSwap = true;\n          evt.detail.isError = false;\n          } \n          });\n    </script></html>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -327,7 +327,7 @@ func body(currentTab string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</main></div><div id=\"relogin\"></div></body>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</main></div><div id=\"relogin\"></div><div id=\"toast-container\" x-data=\"{ \n        toasts: [],\n        toastClass(variant) {\n          switch (variant) {\n            case &#39;success&#39;:\n              return &#39;border-l-success&#39;\n            case &#39;error&#39;:\n              return &#39;border-l-error&#39;\n            default:\n              return &#39;border-l-info&#39;\n          }\n        }\n      }\" class=\"absolute top-8 right-4 max-w-52 flex flex-col gap-3\" @show-toast=\"\n      let ts = new Date().toISOString()\n      let toast = {\n      ...$event.detail,\n        ts: ts\n      }\n      toasts = [toast, ...toasts]\n      setTimeout(() =&gt; toasts.forEach(toast =&gt; {\n          if (toast.ts === ts) {\n              toast.show = true\n            }\n        }), 100);\n      \"><template x-for=\"toast in toasts\" :key=\"toast.ts\"><div class=\"bg-base-300 border-l-8 text-base-content px-4 py-2 transition-transform duration-300\" :class=\"[\n            toastClass(toast.variant),\n            toast.show ? &#39;translate-x-0&#39; : &#39;translate-x-[130%]&#39;,\n          ]\" x-text=\"toast.message\"></div></template></div></body>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -335,7 +335,7 @@ func body(currentTab string) templ.Component {
 	})
 }
 
-func NotFound(redirect string) templ.Component {
+func ServerFailure(redirect string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
@@ -365,7 +365,7 @@ func NotFound(redirect string) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = notFound(redirect).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = serverFailure(redirect).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -379,7 +379,7 @@ func NotFound(redirect string) templ.Component {
 	})
 }
 
-func notFound(redirect string) templ.Component {
+func serverFailure(redirect string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
@@ -397,7 +397,7 @@ func notFound(redirect string) templ.Component {
 			templ_7745c5c3_Var13 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<body hx-boost=\"true\"><div class=\"h-full w-full flex justify-center items-center flex-col gap-2\"><h1>Not found</h1><p>We could not find what you are looking for.</p>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<body hx-boost=\"true\"><div class=\"h-full w-full flex justify-center items-center flex-col gap-2\"><h1>Something went wrong</h1><p>Please try again later or refresh the page.</p>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -420,6 +420,102 @@ func notFound(redirect string) templ.Component {
 			return templ_7745c5c3_Err
 		})
 		templ_7745c5c3_Err = Button(ButtonConfig{Href: redirect}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var14), templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div></body>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return templ_7745c5c3_Err
+	})
+}
+
+func NotFound(redirect string) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var15 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var15 == nil {
+			templ_7745c5c3_Var15 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Var16 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+			templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+			templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+			if !templ_7745c5c3_IsBuffer {
+				defer func() {
+					templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+					if templ_7745c5c3_Err == nil {
+						templ_7745c5c3_Err = templ_7745c5c3_BufErr
+					}
+				}()
+			}
+			ctx = templ.InitializeContext(ctx)
+			templ_7745c5c3_Err = notFound(redirect).Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			return templ_7745c5c3_Err
+		})
+		templ_7745c5c3_Err = wrapWithHeadIfNeeded().Render(templ.WithChildren(ctx, templ_7745c5c3_Var16), templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return templ_7745c5c3_Err
+	})
+}
+
+func notFound(redirect string) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var17 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var17 == nil {
+			templ_7745c5c3_Var17 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<body hx-boost=\"true\"><div class=\"h-full w-full flex justify-center items-center flex-col gap-2\"><h1>Not found</h1><p>We could not find what you are looking for.</p>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Var18 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+			templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+			templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+			if !templ_7745c5c3_IsBuffer {
+				defer func() {
+					templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+					if templ_7745c5c3_Err == nil {
+						templ_7745c5c3_Err = templ_7745c5c3_BufErr
+					}
+				}()
+			}
+			ctx = templ.InitializeContext(ctx)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("Go back")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			return templ_7745c5c3_Err
+		})
+		templ_7745c5c3_Err = Button(ButtonConfig{Href: redirect}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var18), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
