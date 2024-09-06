@@ -85,9 +85,14 @@ func RegisterRoutes(
 		return template(c, 404, templates.NotFound("/users"))
 	})
 	r.HTTPErrorHandler = func(err error, c echo.Context) {
-		hub := sentry.GetHubFromContext(c.Request().Context())
-		hub.CaptureException(fmt.Errorf("request failed: %w", err))
-		template(c, 500, templates.ServerFailure("/users"))
+		he, ok := err.(*echo.HTTPError)
+		if ok {
+			template(c, he.Code, templates.ServerFailure("/users"))
+		} else {
+			hub := sentry.GetHubFromContext(c.Request().Context())
+			hub.CaptureException(fmt.Errorf("request failed: %w", err))
+			template(c, 500, templates.ServerFailure("/users"))
+		}
 	}
 }
 

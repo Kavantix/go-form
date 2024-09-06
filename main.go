@@ -18,7 +18,6 @@ import (
 	sentryhttp "github.com/getsentry/sentry-go/http"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 
 	_ "github.com/lib/pq"
 )
@@ -34,6 +33,7 @@ func main() {
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		log.Fatalf("Error loading .env file:\n%s\n", err)
 	}
+
 	err = InitSentry()
 	if err != nil {
 		log.Fatalf("Cannot initialize sentry:\n%s\n", err)
@@ -92,20 +92,18 @@ func main() {
 		}
 	})
 
-	r.Use(middleware.Gzip())
+	RegisterMailhogProxy(
+		r,
+		MailhogHost(mailhogHost),
+		MailhogUser(MustLookupEnv("MAILHOG_USER")),
+		MailhogPassword(MustLookupEnv("MAILHOG_PASSWORD")),
+	)
 
 	RegisterRoutes(
 		r,
 		disk,
 		isProduction,
 		queries,
-	)
-
-	RegisterMailhogProxy(
-		r,
-		MailhogHost(mailhogHost),
-		MailhogUser(MustLookupEnv("MAILHOG_USER")),
-		MailhogPassword(MustLookupEnv("MAILHOG_PASSWORD")),
 	)
 
 	host := env.Lookup("HOST", "0.0.0.0")
