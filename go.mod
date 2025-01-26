@@ -18,6 +18,7 @@ require (
 	github.com/labstack/echo/v4 v4.10.0
 	github.com/lib/pq v1.10.9
 	github.com/matcornic/hermes/v2 v2.1.0
+	github.com/phsym/console-slog v0.3.1
 	github.com/rsc/getopt v0.0.0-20170811000552-20be20937449
 	github.com/wneessen/go-mail v0.4.0
 )

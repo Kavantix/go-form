@@ -8,6 +8,8 @@ import (
 	"log"
 	"log/slog"
 	"net/http"
+	"os"
+	"time"
 
 	"github.com/Kavantix/go-form/auth"
 	"github.com/Kavantix/go-form/database"
@@ -18,6 +20,7 @@ import (
 	sentryhttp "github.com/getsentry/sentry-go/http"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
+	"github.com/phsym/console-slog"
 
 	_ "github.com/lib/pq"
 )
@@ -26,9 +29,17 @@ func main() {
 	ctx := context.Background()
 	isProduction := IsProduction(LookupEnv("ENVIRONMENT", "dev") == "production")
 
-	logger.InitGoogleCloudLogger()
+	if isProduction {
+		logger.InitGoogleCloudLogger()
+	} else {
+		logger.RegisterHandler(console.NewHandler(os.Stdout, &console.HandlerOptions{
+			AddSource:  true,
+			Level:      slog.LevelDebug,
+			TimeFormat: time.TimeOnly,
+		}))
+	}
 
-	log.Println("Starting...")
+	logger.Info(ctx, "Starting...")
 	err := godotenv.Load()
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		log.Fatalf("Error loading .env file:\n%s\n", err)
@@ -64,9 +75,11 @@ func main() {
 	// 	IncludeValues: false,
 	// })
 
-	log.Println("Configuring routes...")
+	logger.Info(ctx, "Configuring routes...")
 	r := echo.New()
-	logger.SetupEchoGoogleCloudLogger(r, env.Lookup("PROJECT_ID", "eighth-gamma-414620"))
+	if isProduction {
+		logger.SetupEchoGoogleCloudLogger(r, env.Lookup("PROJECT_ID", "eighth-gamma-414620"))
+	}
 	r.Use(echo.WrapMiddleware(sentryhttp.New(sentryhttp.Options{Repanic: true}).Handle))
 	r.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		// Add extra middleware for sentry since default implementation does not add the status to the transaction

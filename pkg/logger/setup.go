@@ -83,7 +83,6 @@ func recordContainsAttr(rec slog.Record, key string) bool {
 	})
 	return result
 }
-
 func recordContainsAttrWithValue(rec slog.Record, key string, value string) bool {
 	result := ""
 	rec.Attrs(func(a slog.Attr) bool {
@@ -104,7 +103,7 @@ func (h *CloudLoggingHandler) Handle(ctx context.Context, rec slog.Record) error
 		// See https://cloud.google.com/trace/docs/trace-log-integration
 		rec.Add("logging.googleapis.com/trace", slog.StringValue(trace))
 	}
-	if recordContainsAttr(rec, "error") {
+	if recordContainsAttr(rec, "error") || (rec.Level >= slog.LevelError && recordContainsAttrWithValue(rec, "prefix", "echo")) {
 		stack := debug.Stack()
 		rec.AddAttrs(
 			slog.String("exception", fmt.Sprintf("%s:\n%s", rec.Message, string(stack))),
@@ -152,18 +151,13 @@ func SetupEchoGoogleCloudLogger(e *echo.Echo, projectId string) {
 		LogStatus:   true,
 		LogURI:      true,
 		LogError:    true,
-		HandleError: false, // forwards error to the global error handler, so it can decide appropriate status code
+		HandleError: true, // forwards error to the global error handler, so it can decide appropriate status code
 		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
 			if v.Error != nil && v.Status != 404 {
 				logger.LogAttrs(c.Request().Context(), slog.LevelError, fmt.Sprintf("Request failed: %s", v.Error),
 					slog.String("uri", v.URI),
 					slog.Int("status", v.Status),
 					slog.String("error", v.Error.Error()),
-				)
-			} else {
-				logger.LogAttrs(c.Request().Context(), slog.LevelInfo, "Request successful",
-					slog.String("uri", v.URI),
-					slog.Int("status", v.Status),
 				)
 			}
 			return nil
